@@ -1,8 +1,11 @@
 ---
-// Front page (parity with gatsby-node.js "/"): if a WP page has uri "/", render it;
-// otherwise fall back to the blog archive (first page).
+// Front page (parity with gatsby-node.js "/"): if a WP page has uri "/", render it
+// with the HeroHeader + content (like the Gatsby page template); otherwise fall
+// back to the blog archive (first page).
 import Base from "@theme/layouts/Base.astro";
+import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
 import { getPages, getPosts } from "../lib/wp";
 
 const pages = await getPages();
@@ -10,14 +13,22 @@ const front = pages.find((p) => p.uri === "/");
 const posts = front ? [] : await getPosts();
 ---
 {front ? (
-  <Base pageTitle={front.title}>
-    <article class="soames-page">
-      <h1>{front.title}</h1>
-      <Shortcodes html={front.content} />
-    </article>
+  <Base pageTitle={front.title} description={front.excerpt} isHomePage={true}>
+    <HeroHeader
+      title={front.title}
+      subhead={front.excerpt}
+      backgroundImage={front.featuredImage?.sourceUrl ?? null}
+      overlayOpacity={front.overlayOpacity}
+    />
+    {front.content && (
+      <section id="soames-gatsby-content-container" class="soames-gatsby-content">
+        <RemoveContentAreaPadding />
+        <Shortcodes html={front.content} />
+      </section>
+    )}
   </Base>
 ) : (
-  <Base pageTitle="Home">
+  <Base pageTitle="Home" isHomePage={true}>
     <h1>Blog</h1>
     <ul class="post-list">
       {posts.map((post) => (

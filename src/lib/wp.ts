@@ -39,6 +39,8 @@ export interface WpPage {
   title: string;
   uri: string;
   content: string;
+  excerpt: string;
+  overlayOpacity: number | null;
   featuredImage: WpImage | null;
 }
 export interface WpPost {
@@ -68,13 +70,15 @@ function normalizeImage(node: any): WpImage | null {
 export async function getPages(): Promise<WpPage[]> {
   // NOTE the alias `wpPages:` — required to pass Wordfence.
   const data = await wpQuery<{ wpPages: { nodes: any[] } }>(
-    `{ wpPages: pages(first: 100) { nodes { databaseId title uri content ${IMAGE_FRAGMENT} } } }`
+    `{ wpPages: pages(first: 100) { nodes { databaseId title uri content excerpt overlayOpacity ${IMAGE_FRAGMENT} } } }`
   );
   return data.wpPages.nodes.map((n) => ({
     databaseId: n.databaseId,
     title: n.title,
     uri: n.uri,
     content: n.content ?? "",
+    excerpt: n.excerpt ?? "",
+    overlayOpacity: typeof n.overlayOpacity === "number" ? n.overlayOpacity : null,
     featuredImage: normalizeImage(n),
   }));
 }

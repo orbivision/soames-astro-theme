@@ -1,8 +1,11 @@
 ---
 // All WordPress Pages (except the front page, served by index.astro).
-import { Image } from "astro:assets";
+// Mirrors the Gatsby page template: HeroHeader (featured image as parallax bg,
+// excerpt as subhead) + content wrapped in the .soames-gatsby-content container.
 import Base from "@theme/layouts/Base.astro";
+import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
 import { getPages } from "../lib/wp";
 
 export async function getStaticPaths() {
@@ -16,21 +19,18 @@ export async function getStaticPaths() {
 }
 
 const { page } = Astro.props;
-const img = page.featuredImage;
 ---
-<Base pageTitle={page.title}>
-  <article class="soames-page">
-    <h1>{page.title}</h1>
-    {img && img.width && img.height && (
-      <Image
-        src={img.sourceUrl}
-        alt={img.altText}
-        width={img.width}
-        height={img.height}
-        widths={[400, 800, 1200]}
-        sizes="(max-width: 800px) 100vw, 800px"
-      />
-    )}
-    <Shortcodes html={page.content} />
-  </article>
+<Base pageTitle={page.title} description={page.excerpt}>
+  <HeroHeader
+    title={page.title}
+    subhead={page.excerpt}
+    backgroundImage={page.featuredImage?.sourceUrl ?? null}
+    overlayOpacity={page.overlayOpacity}
+  />
+  {page.content && (
+    <section id="soames-gatsby-content-container" class="soames-gatsby-content">
+      <RemoveContentAreaPadding />
+      <Shortcodes html={page.content} />
+    </section>
+  )}
 </Base>

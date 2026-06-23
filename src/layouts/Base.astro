@@ -24,7 +24,7 @@ interface Props {
   description?: string;
   isHomePage?: boolean;
 }
-const { pageTitle, description } = Astro.props;
+const { pageTitle, description, isHomePage = false } = Astro.props;
 
 const [settings, soames, headerMenu, footerMenu] = await Promise.all([
   getGeneralSettings(),
@@ -60,23 +60,29 @@ const showCompanyName = soames.showCompanyName ?? true;
     />
   </head>
   <body>
-    <Header
-      title={settings.title}
-      logoUrl={soames.logoUrl}
-      logoAlt={soames.logoAlt}
-      companyName={soames.companyName}
-      showCompanyName={showCompanyName}
-      menuItems={headerMenu}
-    />
-    <main>
-      <slot />
-    </main>
-    <Footer
-      title={settings.title}
-      contactBlurb={soames.contactBlurb}
-      companyName={soames.companyName}
-      menuItems={footerMenu}
-    />
+    {/* `.global-wrapper` matches the Gatsby Layout structure. Crucially, the theme
+        CSS makes <main> the parallax scroll container (height:100vh; overflow-y:auto;
+        perspective:2px), so EVERYTHING that scrolls — content AND footer — must live
+        INSIDE <main>, exactly as the Gatsby layout had it. */}
+    <div class="global-wrapper" data-is-root-path={isHomePage}>
+      <Header
+        title={settings.title}
+        logoUrl={soames.logoUrl}
+        logoAlt={soames.logoAlt}
+        companyName={soames.companyName}
+        showCompanyName={showCompanyName}
+        menuItems={headerMenu}
+      />
+      <main>
+        <slot />
+        <Footer
+          title={settings.title}
+          contactBlurb={soames.contactBlurb}
+          companyName={soames.companyName}
+          menuItems={footerMenu}
+        />
+      </main>
+    </div>
     {/* Bootstrap 5 bundle (Popper included, no jQuery) handles the mobile
         hamburger collapse; soames-nav.js covers submenu dropdowns + scroll state. */}
     <script>
