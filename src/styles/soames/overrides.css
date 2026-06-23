@@ -1942,6 +1942,15 @@ blockquote {
   background-color: #1a3d21 !important;
 }
 
+/* --- Nav submenu (dropdown) links: chartreuse for contrast on the dark dropdown
+   background (ORBI-26). !important + high specificity to beat the Bootstrap
+   `.text-white !important` utility carried by the dropdown items. --- */
+.soames-menu .dropdown .dropdown-menu .dropdown-item,
+.soames-menu .dropdown .dropdown-menu .dropdown-item:focus,
+.soames-menu .dropdown .dropdown-menu .dropdown-item:hover {
+  color: #c8e83c !important;
+}
+
 .soames-footer a,
 .soames-footer a:hover {
   color: #c8e83c;
