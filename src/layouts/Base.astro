@@ -2,6 +2,12 @@
 // Soames theme base layout. Header & Footer are imported through `@theme/` so a
 // site can shadow them via src/overrides/. All WordPress data is fetched at build
 // time here (replaces Gatsby useStaticQuery) and passed down as props.
+
+// Global styles (cascade order matches the Gatsby setup: vendor → theme → overrides).
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../styles/vendor/wordpress-blocks.css";
+import "../styles/theme.css"; // @imports soames/{base,layout,typography,components,overrides}
+
 import Header from "@theme/components/Header";
 import Footer from "@theme/components/Footer";
 import {
@@ -68,5 +74,11 @@ const showCompanyName = soames.showCompanyName ?? true;
       companyName={soames.companyName}
       menuItems={footerMenu}
     />
+    {/* Bootstrap 5 bundle (Popper included, no jQuery) handles the mobile
+        hamburger collapse; soames-nav.js covers submenu dropdowns + scroll state. */}
+    <script>
+      import "bootstrap/dist/js/bootstrap.bundle.min.js";
+      import "../scripts/soames-nav.js";
+    </script>
   </body>
 </html>

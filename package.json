@@ -14,7 +14,11 @@
     "./styles/*": "./src/styles/*",
     "./package.json": "./package.json"
   },
-  "files": ["src", "README.md", "LICENSE"],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "check": "astro check"
   },
@@ -25,6 +29,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
+    "bootstrap": "^5.3.8",
     "html-react-parser": "^5.2.3"
   },
   "devDependencies": {
