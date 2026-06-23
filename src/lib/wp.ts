@@ -120,6 +120,46 @@ export async function getPostBySlug(slug: string): Promise<WpPost | null> {
   return posts.find((p) => p.slug === slug) ?? null;
 }
 
+// --- Navigation menus (parity with allWpMenu + locations HEADER/FOOTER) ---
+export interface MenuChild {
+  id: string;
+  label: string;
+  uri: string;
+  order: number;
+}
+export interface MenuItem extends MenuChild {
+  path: string;
+  parentDatabaseId: number;
+  childItems: MenuChild[];
+}
+
+// Returns top-level items (with their children) for a registered menu location
+// e.g. "HEADER" / "FOOTER". `menus` is not WAF-blocked, so no aliasing needed.
+export async function getMenuByLocation(location: string): Promise<MenuItem[]> {
+  const data = await wpQuery<{ menus: { nodes: any[] } }>(
+    `{ menus(first: 20) { nodes { locations menuItems(first: 100) { nodes {
+        id label path uri parentDatabaseId order
+        childItems { nodes { id label uri order } }
+      } } } } }`
+  );
+  const menu = data.menus.nodes.find((m) => (m.locations ?? []).includes(location));
+  const nodes: any[] = menu?.menuItems?.nodes ?? [];
+  return nodes
+    .filter((n) => n.parentDatabaseId === 0)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((n) => ({
+      id: n.id,
+      label: n.label,
+      path: n.path,
+      uri: n.uri,
+      parentDatabaseId: n.parentDatabaseId,
+      order: n.order,
+      childItems: (n.childItems?.nodes ?? []).sort(
+        (a: MenuChild, b: MenuChild) => (a.order ?? 0) - (b.order ?? 0)
+      ),
+    }));
+}
+
 // Soames plugin settings via the REST endpoint (same source the Gatsby theme uses
 // in gatsby-node.js sourceNodes — companyName, logo, contactBlurb, etc.).
 export interface SoamesSettings {

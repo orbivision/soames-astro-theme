@@ -1,33 +1,64 @@
 ---
-// Soames theme base layout. Footer is imported through `@theme/` so a site can
-// shadow it via src/overrides/components/Footer.tsx (the theme-shadow resolver).
+// Soames theme base layout. Header & Footer are imported through `@theme/` so a
+// site can shadow them via src/overrides/. All WordPress data is fetched at build
+// time here (replaces Gatsby useStaticQuery) and passed down as props.
+import Header from "@theme/components/Header";
 import Footer from "@theme/components/Footer";
-import { getGeneralSettings, getSoamesSettings } from "../lib/wp";
+import {
+  getGeneralSettings,
+  getSoamesSettings,
+  getMenuByLocation,
+} from "../lib/wp";
 
 interface Props {
   pageTitle: string;
+  description?: string;
+  isHomePage?: boolean;
 }
-const { pageTitle } = Astro.props;
+const { pageTitle, description } = Astro.props;
 
-// Build-time data (replaces Gatsby useStaticQuery / soamesSettings node).
-const [settings, soames] = await Promise.all([
+const [settings, soames, headerMenu, footerMenu] = await Promise.all([
   getGeneralSettings(),
   getSoamesSettings(),
+  getMenuByLocation("HEADER"),
+  getMenuByLocation("FOOTER"),
 ]);
+
+const metaDescription = description || settings.description || "";
+const fullTitle = `${pageTitle} | ${settings.title}`;
+const showCompanyName = soames.showCompanyName ?? true;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{pageTitle} — {settings.title}</title>
+    <title>{fullTitle}</title>
+    {metaDescription && <meta name="description" content={metaDescription} />}
+    {/* SEO/OG/Twitter — replaces the Gatsby Seo (react-helmet) component */}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={metaDescription} />
     {soames.faviconUrl && <link rel="icon" href={soames.faviconUrl} type="image/png" />}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,500;1,700;1,900&display=swap"
+    />
   </head>
   <body>
-    <header class="site-header">
-      <strong>{soames.companyName || settings.title}</strong>
-      <nav><a href="/">Home</a> · <a href="/blog/">Blog</a></nav>
-    </header>
+    <Header
+      title={settings.title}
+      logoUrl={soames.logoUrl}
+      logoAlt={soames.logoAlt}
+      companyName={soames.companyName}
+      showCompanyName={showCompanyName}
+      menuItems={headerMenu}
+    />
     <main>
       <slot />
     </main>
@@ -35,6 +66,7 @@ const [settings, soames] = await Promise.all([
       title={settings.title}
       contactBlurb={soames.contactBlurb}
       companyName={soames.companyName}
+      menuItems={footerMenu}
     />
   </body>
 </html>
