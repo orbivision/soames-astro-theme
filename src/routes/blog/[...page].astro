@@ -1,8 +1,10 @@
 ---
-// Paginated blog archive (parity with blog-post-archive template).
+// Paginated blog archive / blog roll (parity with blog-post-archive.tsx):
+// HeroHeader + posts as cards grouped 3-per-row + Read More + pagination.
 // Page 1 → /blog/ ; page N → /blog/<N>/ . postsPerPage from WP reading settings.
 import Base from "@theme/layouts/Base.astro";
-import { getPosts, getPostsPerPage } from "../../lib/wp";
+import HeroHeader from "@theme/components/HeroHeader";
+import { getPosts, getPostsPerPage, type WpPost } from "../../lib/wp";
 
 export async function getStaticPaths() {
   const [posts, perPage] = await Promise.all([getPosts(), getPostsPerPage()]);
@@ -12,7 +14,6 @@ export async function getStaticPaths() {
     const pageNum = i + 1;
     const slice = posts.slice(i * perPage, (i + 1) * perPage);
     return {
-      // page 1 has no suffix (/blog/), others /blog/2/ …
       params: { page: pageNum === 1 ? undefined : String(pageNum) },
       props: {
         posts: slice,
@@ -26,21 +27,51 @@ export async function getStaticPaths() {
 }
 
 const { posts, pageNum, totalPages, prevPath, nextPath } = Astro.props;
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
+
+// Group posts 3-per-row (parity with the Gatsby blog roll).
+const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: number) => {
+  if (i % 3 === 0) groups.push([post]);
+  else groups[groups.length - 1].push(post);
+  return groups;
+}, []);
 ---
-<Base pageTitle={`Blog${pageNum > 1 ? ` — page ${pageNum}` : ""}`}>
-  <h1>Blog</h1>
-  <ul class="post-list">
-    {posts.map((post) => (
-      <li>
-        <a href={`/blog/post/${post.slug}/`}>{post.title}</a>
-        <small> — {new Date(post.date).toLocaleDateString()}</small>
-        <div set:html={post.excerpt} />
-      </li>
-    ))}
-  </ul>
-  <nav class="pagination">
-    {prevPath && <a href={prevPath}>← Newer</a>}
-    <span>Page {pageNum} of {totalPages}</span>
-    {nextPath && <a href={nextPath}>Older →</a>}
-  </nav>
+<Base pageTitle={`Blog${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
+  <HeroHeader title="Blog" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+
+  {posts.length === 0 ? (
+    <p>No blog posts found. Add posts to your WordPress site and they'll appear here!</p>
+  ) : (
+    <section class="soames-blog-roll">
+      <div class="container">
+        {rows.map((group) => (
+          <div class="media-container-row">
+            {group.map((post) => (
+              <div class="card p-3 col-12 col-lg-4">
+                <div class="card-wrapper">
+                  <div class="card-box">
+                    <h4 class="card-title mbr-fonts-style display-5">{post.title}</h4>
+                    <h4 class="mbr-fonts-style display-7">{fmtDate(post.date)}</h4>
+                    <div set:html={post.excerpt} />
+                  </div>
+                  <div class="mbr-section-btn text-center">
+                    <a href={`/blog/post/${post.slug}/`} class="btn btn-primary display-4">
+                      <span>Read More</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="container pb-5">
+    {prevPath && <a href={prevPath}>← Newer posts</a>}
+    {prevPath && nextPath && <span> · </span>}
+    {nextPath && <a href={nextPath}>Older posts →</a>}
+  </section>
 </Base>

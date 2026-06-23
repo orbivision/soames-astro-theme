@@ -1,32 +1,79 @@
 ---
-// Single blog post + featured image (parity with blog-post template).
+// Single blog post (parity with blog-post.tsx): HeroHeader + two columns —
+// content (article: title, date, body, Bio, prev/next) and a sidebar
+// (featured image + Recent Posts via BlogSidebar). Content via the shortcode parser.
 import { Image } from "astro:assets";
 import Base from "@theme/layouts/Base.astro";
+import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import Bio from "@theme/components/Bio";
+import BlogSidebar from "@theme/components/BlogSidebar";
 import { getPosts } from "../../../lib/wp";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+  return posts.map((post, i) => ({
+    params: { slug: post.slug },
+    props: {
+      post,
+      posts,
+      previous: posts[i + 1] ?? null, // posts are date DESC → next index is older
+      next: posts[i - 1] ?? null,
+    },
+  }));
 }
 
-const { post } = Astro.props;
+const { post, posts, previous, next } = Astro.props;
 const img = post.featuredImage;
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 ---
-<Base pageTitle={post.title}>
-  <article class="soames-post">
-    <h1>{post.title}</h1>
-    <p><small>{new Date(post.date).toLocaleDateString()}</small></p>
-    {img && img.width && img.height && (
-      <Image
-        src={img.sourceUrl}
-        alt={img.altText}
-        width={img.width}
-        height={img.height}
-        widths={[400, 800, 1200]}
-        sizes="(max-width: 800px) 100vw, 800px"
-      />
-    )}
-    <Shortcodes html={post.content} />
-  </article>
+<Base pageTitle={post.title} description={post.excerpt}>
+  <HeroHeader title="Blog" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+  <section>
+    <div class="media-container-row">
+      <div class="col-12 col-lg-8">
+        <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
+          <article class="blog-post" itemscope itemtype="http://schema.org/Article">
+            <header>
+              <h1 itemprop="headline">{post.title}</h1>
+              <p>{fmtDate(post.date)}</p>
+            </header>
+            {post.content && (
+              <section itemprop="articleBody" class="blog-post-content">
+                <Shortcodes html={post.content} />
+              </section>
+            )}
+            <hr />
+            <footer>
+              <Bio author={post.author} />
+            </footer>
+          </article>
+          <nav class="blog-post-nav">
+            <ul style="display:flex;flex-wrap:wrap;justify-content:space-between;list-style:none;padding:0">
+              <li>{previous && <a href={`/blog/post/${previous.slug}/`} rel="prev">← {previous.title}</a>}</li>
+              <li>{next && <a href={`/blog/post/${next.slug}/`} rel="next">{next.title} →</a>}</li>
+            </ul>
+          </nav>
+        </section>
+      </div>
+      <div class="col-12 col-lg-4">
+        <section id="soames-gatsby-sidebar-container" class="soames-gatsby-sidebar">
+          {img && img.width && img.height && (
+            <Image
+              src={img.sourceUrl}
+              alt={img.altText}
+              width={img.width}
+              height={img.height}
+              widths={[400, 800]}
+              sizes="(max-width: 1000px) 100vw, 33vw"
+              style="margin-bottom:50px"
+            />
+          )}
+          <h1>Recent Posts</h1>
+          <BlogSidebar posts={posts} currentId={post.databaseId} />
+        </section>
+      </div>
+    </div>
+  </section>
 </Base>

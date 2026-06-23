@@ -43,6 +43,12 @@ export interface WpPage {
   overlayOpacity: number | null;
   featuredImage: WpImage | null;
 }
+export interface WpAuthor {
+  firstName: string | null;
+  name: string | null;
+  description: string | null;
+  avatarUrl: string | null;
+}
 export interface WpPost {
   databaseId: number;
   title: string;
@@ -52,6 +58,7 @@ export interface WpPost {
   excerpt: string;
   content: string;
   featuredImage: WpImage | null;
+  author: WpAuthor | null;
 }
 
 const IMAGE_FRAGMENT = `featuredImage { node { sourceUrl altText mediaDetails { width height } } }`;
@@ -85,18 +92,30 @@ export async function getPages(): Promise<WpPage[]> {
 
 export async function getPosts(): Promise<WpPost[]> {
   const data = await wpQuery<{ wpPosts: { nodes: any[] } }>(
-    `{ wpPosts: posts(first: 100) { nodes { databaseId title slug uri date excerpt content ${IMAGE_FRAGMENT} } } }`
+    `{ wpPosts: posts(first: 100) { nodes { databaseId title slug uri date excerpt content ${IMAGE_FRAGMENT}
+        author { node { firstName name description avatar { url } } } } } }`
   );
-  return data.wpPosts.nodes.map((n) => ({
-    databaseId: n.databaseId,
-    title: n.title,
-    slug: n.slug,
-    uri: n.uri,
-    date: n.date,
-    excerpt: n.excerpt ?? "",
-    content: n.content ?? "",
-    featuredImage: normalizeImage(n),
-  }));
+  return data.wpPosts.nodes.map((n) => {
+    const a = n.author?.node;
+    return {
+      databaseId: n.databaseId,
+      title: n.title,
+      slug: n.slug,
+      uri: n.uri,
+      date: n.date,
+      excerpt: n.excerpt ?? "",
+      content: n.content ?? "",
+      featuredImage: normalizeImage(n),
+      author: a
+        ? {
+            firstName: a.firstName ?? null,
+            name: a.name ?? null,
+            description: a.description ?? null,
+            avatarUrl: a.avatar?.url ?? null,
+          }
+        : null,
+    };
+  });
 }
 
 export async function getGeneralSettings(): Promise<{ title: string; description: string }> {
