@@ -1,0 +1,4 @@
+/* Empty placeholder. A consuming site provides its own global CSS overrides by
+ * shadowing this file at src/overrides/styles/site-overrides.css — the theme-shadow
+ * resolver swaps it in. Base.astro imports it LAST so site rules win the cascade.
+ * (Successor to the Gatsby site pattern: import '../../styles/overrides.css'.) */

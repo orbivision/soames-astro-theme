@@ -5,6 +5,24 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { themeShadow } from './theme-shadow.js';
 
+// html-react-parser is CommonJS and pulls a CJS subtree; these must be bundled
+// (noExternal) AND pre-bundled (optimizeDeps) so React dedupes to one copy and
+// dev SSR doesn't choke on CJS (`exports is not defined`).
+const PARSER_CJS_DEPS = [
+  'html-react-parser',
+  'html-dom-parser',
+  'domhandler',
+  'domelementtype',
+  'domutils',
+  'dom-serializer',
+  'htmlparser2',
+  'entities',
+  'style-to-js',
+  'style-to-object',
+  'inline-style-parser',
+  'react-property',
+];
+
 export interface SoamesThemeOptions {
   /** WordPress GraphQL endpoint, e.g. http://soames.orbivision.net/graphql */
   wordpressUrl?: string;
@@ -47,9 +65,18 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
           image: { domains: imageDomains },
           vite: {
             plugins: [themeShadow({ themeDir: themeSrc, overrideDir })],
-            // Ship source from this package; bundle it AND html-react-parser so
-            // both are transpiled and share the deduped React (see dedupe below).
-            ssr: { noExternal: ['soames-astro-theme', 'html-react-parser'] },
+            // Ship source from this package; bundle it AND the html-react-parser
+            // subtree so everything is transpiled, shares the deduped React, and
+            // the parser's CJS deps (domelementtype et al.) get proper interop
+            // under SSR (otherwise "does not provide an export named 'default'").
+            ssr: {
+              noExternal: ['soames-astro-theme', ...PARSER_CJS_DEPS],
+              // SSR dep pre-bundling — without this, dev SSR throws "exports is
+              // not defined" on the CommonJS parser modules.
+              optimizeDeps: { include: PARSER_CJS_DEPS },
+            },
+            // Client-side pre-bundle too (for the parser when used in islands).
+            optimizeDeps: { include: PARSER_CJS_DEPS },
             // Force a single React copy — the theme ships html-react-parser, which
             // must build elements with the SAME React the renderer uses (otherwise
             // "Objects are not valid as a React child" under file:/linked installs).
