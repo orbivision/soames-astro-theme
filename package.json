@@ -1,0 +1,35 @@
+{
+  "name": "soames-astro-theme",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Shared Astro theme for the Soames ecosystem (WordPress headless + React islands). Successor to soames-gatsby-theme.",
+  "exports": {
+    ".": "./src/integration.ts",
+    "./integration": "./src/integration.ts",
+    "./theme-shadow": "./src/theme-shadow.ts",
+    "./lib/wp": "./src/lib/wp.ts",
+    "./routes/*": "./src/routes/*",
+    "./components/*": "./src/components/*",
+    "./layouts/*": "./src/layouts/*",
+    "./styles/*": "./src/styles/*",
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": {
+    "check": "astro check"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.2.0",
+    "html-react-parser": "^5.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "astro": "^5.7.0"
+  }
+}

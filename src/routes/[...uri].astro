@@ -1,0 +1,36 @@
+---
+// All WordPress Pages (except the front page, served by index.astro).
+import { Image } from "astro:assets";
+import Base from "@theme/layouts/Base.astro";
+import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import { getPages } from "../lib/wp";
+
+export async function getStaticPaths() {
+  const pages = await getPages();
+  return pages
+    .filter((page) => page.uri !== "/") // front page handled by index.astro
+    .map((page) => {
+      const clean = page.uri.replace(/^\/+|\/+$/g, "");
+      return { params: { uri: clean || undefined }, props: { page } };
+    });
+}
+
+const { page } = Astro.props;
+const img = page.featuredImage;
+---
+<Base pageTitle={page.title}>
+  <article class="soames-page">
+    <h1>{page.title}</h1>
+    {img && img.width && img.height && (
+      <Image
+        src={img.sourceUrl}
+        alt={img.altText}
+        width={img.width}
+        height={img.height}
+        widths={[400, 800, 1200]}
+        sizes="(max-width: 800px) 100vw, 800px"
+      />
+    )}
+    <Shortcodes html={page.content} />
+  </article>
+</Base>

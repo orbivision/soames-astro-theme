@@ -1,0 +1,40 @@
+---
+// Soames theme base layout. Footer is imported through `@theme/` so a site can
+// shadow it via src/overrides/components/Footer.tsx (the theme-shadow resolver).
+import Footer from "@theme/components/Footer";
+import { getGeneralSettings, getSoamesSettings } from "../lib/wp";
+
+interface Props {
+  pageTitle: string;
+}
+const { pageTitle } = Astro.props;
+
+// Build-time data (replaces Gatsby useStaticQuery / soamesSettings node).
+const [settings, soames] = await Promise.all([
+  getGeneralSettings(),
+  getSoamesSettings(),
+]);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle} — {settings.title}</title>
+    {soames.faviconUrl && <link rel="icon" href={soames.faviconUrl} type="image/png" />}
+  </head>
+  <body>
+    <header class="site-header">
+      <strong>{soames.companyName || settings.title}</strong>
+      <nav><a href="/">Home</a> · <a href="/blog/">Blog</a></nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <Footer
+      title={settings.title}
+      contactBlurb={soames.contactBlurb}
+      companyName={soames.companyName}
+    />
+  </body>
+</html>

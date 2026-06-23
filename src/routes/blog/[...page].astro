@@ -1,0 +1,46 @@
+---
+// Paginated blog archive (parity with blog-post-archive template).
+// Page 1 → /blog/ ; page N → /blog/<N>/ . postsPerPage from WP reading settings.
+import Base from "@theme/layouts/Base.astro";
+import { getPosts, getPostsPerPage } from "../../lib/wp";
+
+export async function getStaticPaths() {
+  const [posts, perPage] = await Promise.all([getPosts(), getPostsPerPage()]);
+  const totalPages = Math.max(1, Math.ceil(posts.length / perPage));
+
+  return Array.from({ length: totalPages }, (_, i) => {
+    const pageNum = i + 1;
+    const slice = posts.slice(i * perPage, (i + 1) * perPage);
+    return {
+      // page 1 has no suffix (/blog/), others /blog/2/ …
+      params: { page: pageNum === 1 ? undefined : String(pageNum) },
+      props: {
+        posts: slice,
+        pageNum,
+        totalPages,
+        prevPath: pageNum > 1 ? (pageNum === 2 ? "/blog/" : `/blog/${pageNum - 1}/`) : null,
+        nextPath: pageNum < totalPages ? `/blog/${pageNum + 1}/` : null,
+      },
+    };
+  });
+}
+
+const { posts, pageNum, totalPages, prevPath, nextPath } = Astro.props;
+---
+<Base pageTitle={`Blog${pageNum > 1 ? ` — page ${pageNum}` : ""}`}>
+  <h1>Blog</h1>
+  <ul class="post-list">
+    {posts.map((post) => (
+      <li>
+        <a href={`/blog/post/${post.slug}/`}>{post.title}</a>
+        <small> — {new Date(post.date).toLocaleDateString()}</small>
+        <div set:html={post.excerpt} />
+      </li>
+    ))}
+  </ul>
+  <nav class="pagination">
+    {prevPath && <a href={prevPath}>← Newer</a>}
+    <span>Page {pageNum} of {totalPages}</span>
+    {nextPath && <a href={nextPath}>Older →</a>}
+  </nav>
+</Base>

@@ -1,0 +1,28 @@
+---
+// Front page (parity with gatsby-node.js "/"): if a WP page has uri "/", render it;
+// otherwise fall back to the blog archive (first page).
+import Base from "@theme/layouts/Base.astro";
+import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import { getPages, getPosts } from "../lib/wp";
+
+const pages = await getPages();
+const front = pages.find((p) => p.uri === "/");
+const posts = front ? [] : await getPosts();
+---
+{front ? (
+  <Base pageTitle={front.title}>
+    <article class="soames-page">
+      <h1>{front.title}</h1>
+      <Shortcodes html={front.content} />
+    </article>
+  </Base>
+) : (
+  <Base pageTitle="Home">
+    <h1>Blog</h1>
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li><a href={`/blog/post/${post.slug}/`}>{post.title}</a></li>
+      ))}
+    </ul>
+  </Base>
+)}
