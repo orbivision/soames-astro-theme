@@ -1963,13 +1963,20 @@ blockquote {
 .soames-menu button.navbar-toggler .hamburger span {
   background-color: #232323;
 }
-/* (2) Vertical centering: the toggler is position:absolute with a fixed top:1.5rem,
-   which no longer centers in the 77px navbar. Center it regardless of navbar height
-   (also in the scrolled .navbar-short state). */
+/* (2) Vertical position: use a FIXED top that centers the toggler in the closed
+   77px bar. (A % / translateY approach re-centers against the *expanded* navbar
+   when the mobile menu opens, dragging the icon to the middle — keep it fixed so it
+   stays up by the logo.) The scrolled .navbar-short state keeps its own top:20px. */
 .soames-menu button.navbar-toggler {
-  top: 50%;
-  transform: translateY(-50%);
+  top: 29px;
 }
-.soames-menu .navbar.navbar-short .navbar-toggler-right {
-  top: 50%;
+
+/* --- ORBI-26 #3: mobile open submenu spans the full screen width --- */
+@media (max-width: 767px) {
+  .soames-menu .dropdown .dropdown-menu {
+    width: 100vw;
+    max-width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
 }
