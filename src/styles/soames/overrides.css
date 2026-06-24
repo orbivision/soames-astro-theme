@@ -1955,3 +1955,21 @@ blockquote {
 .soames-footer a:hover {
   color: #c8e83c;
 }
+
+/* --- ORBI-26 #2: mobile hamburger toggler --- */
+/* (1) Dark icon: the green scheme made the navbar off-white (#f0efea), but the
+   .hamburger span lines were still #fff (invisible). Match the dark nav text.
+   The scheme's dark-hamburger rule targets .hamburger-icon, not our .hamburger span. */
+.soames-menu button.navbar-toggler .hamburger span {
+  background-color: #232323;
+}
+/* (2) Vertical centering: the toggler is position:absolute with a fixed top:1.5rem,
+   which no longer centers in the 77px navbar. Center it regardless of navbar height
+   (also in the scrolled .navbar-short state). */
+.soames-menu button.navbar-toggler {
+  top: 50%;
+  transform: translateY(-50%);
+}
+.soames-menu .navbar.navbar-short .navbar-toggler-right {
+  top: 50%;
+}
