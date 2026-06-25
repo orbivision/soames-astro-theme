@@ -20,18 +20,29 @@ const HeroHeader: React.FC<HeroHeaderProps> = ({
   const bg = backgroundImage || "https://picsum.photos/1080/720";
   const opacity = overlayOpacity ?? 0.6;
 
+  // The hero bg is drawn on .soames-parallax::after (position:absolute; inset:0;
+  // z-index:-1 — confined to the hero box). We deliberately do NOT set
+  // position:fixed here: a fixed layer escapes the hero to fill <main>'s viewport
+  // and, inside main's `perspective` scroll container, gets composited OVER page
+  // content (the hero bg "bleeds" across the page on hover repaints). Instead we
+  // keep it absolute/inset, neutralize the parallax scale via translate3d(0,0,0),
+  // and get the parallax feel from `background-attachment: fixed` — clipped to the
+  // hero box, so it can never render below the hero. Mirrors SoamesTitleBarLg.
   const css = `
     .soames-background-lg::after {
       background: url(${bg});
       background-position: 50% 50%;
       background-size: cover;
+      background-attachment: fixed;
       background-repeat: no-repeat;
-      position: fixed;
       top: 0px;
+      right: 0px;
+      bottom: 0px;
       left: 0px;
       overflow: hidden;
       pointer-events: none;
-      margin-top: -180px;
+      margin-top: 0px;
+      transform: translate3d(0px, 0px, 0px);
     }
   `;
 

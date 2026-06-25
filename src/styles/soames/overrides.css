@@ -1046,18 +1046,12 @@ section.lazy-placeholder:after {
   color: #000000;
 }
 
-/* Opaque backing for the whole post-hero blog region. The hero's fixed parallax
-   background (z-index:-1) paints behind the entire <main> scroll container (and
-   over main's own background, so a background on main can't cover it). Any
-   TRANSPARENT in-flow region below the hero lets it bleed through on hover
-   repaints — including the empty space BELOW the footer on a short page (few
-   posts). min-height fills the content area to the viewport so hero + this
-   region span 100vh, pinning the footer down with no transparent gap beneath it.
-   570px = the hero height (.soames-header-lg). Matches the blog-roll bg so it
-   reads as one continuous surface down to the footer. */
+/* Opaque backing for the post-hero blog region so the pagination area reads as
+   one continuous surface with the blog-roll down to the footer. (The hero bg-bleed
+   bug is fixed at the source — the hero background is now confined to the hero box,
+   see HeroHeader — so no min-height/coverage tricks are needed here.) */
 .soames-blog-page {
   background-color: #efefef;
-  min-height: calc(100vh - 570px);
 }
 
 .soames-blog-roll {
