@@ -40,38 +40,46 @@ const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: numb
 <Base pageTitle={`Blog${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
   <HeroHeader title="Blog" subhead="" backgroundImage={null} overlayOpacity={0.6} />
 
-  {posts.length === 0 ? (
-    <p>No blog posts found. Add posts to your WordPress site and they'll appear here!</p>
-  ) : (
-    <section class="soames-blog-roll">
-      <div class="container">
-        {rows.map((group) => (
-          <div class="media-container-row">
-            {group.map((post) => (
-              <div class="card p-3 col-12 col-lg-4">
-                <div class="card-wrapper">
-                  <div class="card-box">
-                    <h4 class="card-title mbr-fonts-style display-5">{post.title}</h4>
-                    <h4 class="mbr-fonts-style display-7">{fmtDate(post.date)}</h4>
-                    <div set:html={post.excerpt} />
-                  </div>
-                  <div class="mbr-section-btn text-center">
-                    <a href={`/blog/post/${post.slug}/`} class="btn btn-primary display-4">
-                      <span>Read More</span>
-                    </a>
+  {/* Opaque wrapper around everything below the hero. <main> is the parallax
+      scroll container (perspective:2px) and the hero's fixed background
+      (.soames-parallax::after, z-index:-1) paints behind the whole container —
+      any TRANSPARENT in-flow strip below the hero (e.g. the pagination area on a
+      short page) lets that background bleed through, surfacing on hover repaints.
+      Backing this region opaquely closes that gap regardless of post count. */}
+  <div class="soames-blog-page">
+    {posts.length === 0 ? (
+      <p>No blog posts found. Add posts to your WordPress site and they'll appear here!</p>
+    ) : (
+      <section class="soames-blog-roll">
+        <div class="container">
+          {rows.map((group) => (
+            <div class="media-container-row">
+              {group.map((post) => (
+                <div class="card p-3 col-12 col-lg-4">
+                  <div class="card-wrapper">
+                    <div class="card-box">
+                      <h4 class="card-title mbr-fonts-style display-5">{post.title}</h4>
+                      <h4 class="mbr-fonts-style display-7">{fmtDate(post.date)}</h4>
+                      <div set:html={post.excerpt} />
+                    </div>
+                    <div class="mbr-section-btn text-center">
+                      <a href={`/blog/post/${post.slug}/`} class="btn btn-primary display-4">
+                        <span>Read More</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
 
-  <section class="container pb-5">
-    {prevPath && <a href={prevPath}>← Newer posts</a>}
-    {prevPath && nextPath && <span> · </span>}
-    {nextPath && <a href={nextPath}>Older posts →</a>}
-  </section>
+    <section class="container pb-5">
+      {prevPath && <a href={prevPath}>← Newer posts</a>}
+      {prevPath && nextPath && <span> · </span>}
+      {nextPath && <a href={nextPath}>Older posts →</a>}
+    </section>
+  </div>
 </Base>
