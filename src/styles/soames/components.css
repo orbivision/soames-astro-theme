@@ -938,7 +938,11 @@ input[type='range'] {
 
 .soames-header-lg {
   height: 570px;
-  padding-top: 40px;
+  /* The section flex-centers its content (.soames-parallax: align-items:center),
+     but the fixed top navbar (~77px) overlays the hero's top edge, so centering
+     against the full height pushes content visually toward the header. Pad the
+     top by the navbar height so content centers within the VISIBLE region. */
+  padding-top: 77px;
 }
 
 .soames-header-sm {
