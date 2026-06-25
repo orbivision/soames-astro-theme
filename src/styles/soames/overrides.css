@@ -1046,14 +1046,6 @@ section.lazy-placeholder:after {
   color: #000000;
 }
 
-/* Opaque backing for the post-hero blog region so the pagination area reads as
-   one continuous surface with the blog-roll down to the footer. (The hero bg-bleed
-   bug is fixed at the source — the hero background is now confined to the hero box,
-   see HeroHeader — so no min-height/coverage tricks are needed here.) */
-.soames-blog-page {
-  background-color: #efefef;
-}
-
 .soames-blog-roll {
   padding-top: 90px;
   padding-bottom: 30px;
