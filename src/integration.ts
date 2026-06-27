@@ -94,6 +94,10 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         injectRoute({ pattern: '/[...uri]', entrypoint: 'soames-astro-theme/routes/[...uri].astro' });
         injectRoute({ pattern: '/blog/[...page]', entrypoint: 'soames-astro-theme/routes/blog/[...page].astro' });
         injectRoute({ pattern: '/blog/post/[...slug]', entrypoint: 'soames-astro-theme/routes/blog/post/[...slug].astro' });
+        // Documentation (weDocs). Optional — generates 0 doc pages when weDocs
+        // isn't installed (getDocs() returns []); /docs/ then shows an empty state.
+        injectRoute({ pattern: '/docs', entrypoint: 'soames-astro-theme/routes/docs/index.astro' });
+        injectRoute({ pattern: '/docs/[...slug]', entrypoint: 'soames-astro-theme/routes/docs/[...slug].astro' });
       },
     },
   };

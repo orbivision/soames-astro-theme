@@ -61,6 +61,23 @@ export interface WpPost {
   author: WpAuthor | null;
 }
 
+// weDocs documentation custom post type, exposed to WPGraphQL by the Soames WP
+// plugin (Document/Documents). weDocs is OPTIONAL — see getDocs().
+export interface WpDoc {
+  databaseId: number;
+  title: string;
+  slug: string;
+  uri: string;
+  content: string;
+  excerpt: string;
+  menuOrder: number;
+  parentDatabaseId: number; // 0 when top-level
+  featuredImage: WpImage | null;
+}
+export interface DocTreeNode extends WpDoc {
+  children: DocTreeNode[];
+}
+
 const IMAGE_FRAGMENT = `featuredImage { node { sourceUrl altText mediaDetails { width height } } }`;
 
 function normalizeImage(node: any): WpImage | null {
@@ -116,6 +133,56 @@ export async function getPosts(): Promise<WpPost[]> {
         : null,
     };
   });
+}
+
+// Documentation (weDocs `docs` CPT → GraphQL `documents`). OPTIONAL: weDocs may
+// not be installed, in which case the `documents` field isn't in the schema and
+// the query errors — we treat that as "no docs" and return [] so sites without
+// documentation build normally. Aliased `wpDocs:` to dodge Wordfence (see top).
+export async function getDocs(): Promise<WpDoc[]> {
+  try {
+    // NOTE: the weDocs `docs` CPT does not support excerpts, so `excerpt` is not
+    // a field on the Document type — don't query it.
+    const data = await wpQuery<{ wpDocs: { nodes: any[] } }>(
+      `{ wpDocs: documents(first: 200) { nodes { databaseId title slug uri content menuOrder parentDatabaseId ${IMAGE_FRAGMENT} } } }`
+    );
+    return data.wpDocs.nodes.map((n) => ({
+      databaseId: n.databaseId,
+      title: n.title,
+      slug: n.slug,
+      uri: n.uri,
+      content: n.content ?? "",
+      excerpt: "",
+      menuOrder: n.menuOrder ?? 0,
+      parentDatabaseId: n.parentDatabaseId ?? 0,
+      featuredImage: normalizeImage(n),
+    }));
+  } catch (err) {
+    console.warn(
+      "[soames] getDocs: `documents` unavailable (weDocs not installed?) — rendering no docs.",
+      (err as Error).message
+    );
+    return [];
+  }
+}
+
+// Turn the flat doc list into an ordered hierarchy (sort by menuOrder then title,
+// nest by parentDatabaseId) for the docs sidebar nav.
+export function buildDocTree(docs: WpDoc[]): DocTreeNode[] {
+  const byId = new Map<number, DocTreeNode>();
+  docs.forEach((d) => byId.set(d.databaseId, { ...d, children: [] }));
+  const roots: DocTreeNode[] = [];
+  byId.forEach((node) => {
+    const parent = node.parentDatabaseId ? byId.get(node.parentDatabaseId) : undefined;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  });
+  const sort = (arr: DocTreeNode[]) => {
+    arr.sort((a, b) => a.menuOrder - b.menuOrder || a.title.localeCompare(b.title));
+    arr.forEach((n) => sort(n.children));
+  };
+  sort(roots);
+  return roots;
 }
 
 export async function getGeneralSettings(): Promise<{ title: string; description: string }> {

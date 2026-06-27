@@ -1,0 +1,59 @@
+---
+// Single documentation page (weDocs `docs` CPT). Mirrors the blog post template:
+// HeroHeader + two columns — article content (left) and a hierarchical menu of
+// all doc pages (right), instead of the blog's "Recent Posts". Content is run
+// through the same shortcode parser as posts/pages.
+import Base from "@theme/layouts/Base.astro";
+import HeroHeader from "@theme/components/HeroHeader";
+import Shortcodes from "@theme/components/shortcodes/Shortcodes";
+import DocsSidebar from "@theme/components/DocsSidebar";
+import { getDocs, buildDocTree } from "../../lib/wp";
+
+export async function getStaticPaths() {
+  // Derive the [...slug] param from the doc's WP uri (e.g. /docs/getting-started/
+  // → "getting-started", /docs/guide/install/ → "guide/install"). Skip the empty
+  // slug — /docs/ is the landing page (docs/index.astro). Defined inside
+  // getStaticPaths: Astro evaluates this fn in isolation from the frontmatter.
+  const toSlug = (uri: string) =>
+    uri.replace(/^\/+|\/+$/g, "").replace(/^docs\/?/, "");
+
+  const docs = await getDocs();
+  const tree = buildDocTree(docs);
+  return docs
+    .map((doc) => ({ doc, slug: toSlug(doc.uri) }))
+    .filter(({ slug }) => slug.length > 0)
+    .map(({ doc, slug }) => ({
+      params: { slug },
+      props: { doc, tree },
+    }));
+}
+
+const { doc, tree } = Astro.props;
+---
+<Base pageTitle={doc.title} description={doc.excerpt}>
+  <HeroHeader title="Documentation" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+  <section>
+    <div class="media-container-row">
+      <div class="col-12 col-lg-8">
+        <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
+          <article class="blog-post" itemscope itemtype="http://schema.org/TechArticle">
+            <header>
+              <h1 itemprop="headline">{doc.title}</h1>
+            </header>
+            {doc.content && (
+              <section itemprop="articleBody" class="blog-post-content">
+                <Shortcodes html={doc.content} />
+              </section>
+            )}
+          </article>
+        </section>
+      </div>
+      <div class="col-12 col-lg-4">
+        <section id="soames-gatsby-sidebar-container" class="soames-gatsby-sidebar">
+          <h1>Documentation</h1>
+          <DocsSidebar tree={tree} currentId={doc.databaseId} />
+        </section>
+      </div>
+    </div>
+  </section>
+</Base>
