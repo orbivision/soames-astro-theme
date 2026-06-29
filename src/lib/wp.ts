@@ -115,6 +115,29 @@ export async function getPages(): Promise<WpPage[]> {
   }));
 }
 
+// The page assigned as Settings > Reading > "Posts page" (where the blog lives),
+// or null if none is set. Drives the blog's base URL (its slug) and hero (its
+// title + featured image + overlay). Derived from getPages, which already fetches
+// these fields.
+export interface WpPostsPage {
+  databaseId: number;
+  slug: string;
+  title: string;
+  featuredImage: WpImage | null;
+  overlayOpacity: number | null;
+}
+export async function getPostsPage(): Promise<WpPostsPage | null> {
+  const pp = (await getPages()).find((p) => p.isPostsPage);
+  if (!pp) return null;
+  return {
+    databaseId: pp.databaseId,
+    slug: pp.slug,
+    title: pp.title,
+    featuredImage: pp.featuredImage,
+    overlayOpacity: pp.overlayOpacity,
+  };
+}
+
 export async function getPosts(): Promise<WpPost[]> {
   const data = await wpQuery<{ wpPosts: { nodes: any[] } }>(
     `{ wpPosts: posts(first: 100) { nodes { databaseId title slug uri date excerpt content ${IMAGE_FRAGMENT}

@@ -23,6 +23,36 @@ const PARSER_CJS_DEPS = [
   'react-property',
 ];
 
+// Browser-ish UA — this WP install's Wordfence 403s some default UAs (see lib/wp.ts).
+const WP_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
+// Resolve the blog's base slug from the WP "Posts page" (Settings → Reading) at
+// config time, so the blog archive route can be injected at that slug. Falls back
+// to 'blog' if unset or WP is unreachable, so builds never hang or break on it.
+async function fetchPostsSlug(graphqlUrl: string): Promise<string> {
+  if (!graphqlUrl) return 'blog';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(graphqlUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': WP_UA },
+      body: JSON.stringify({ query: '{ wpPages: pages(first: 100) { nodes { slug isPostsPage } } }' }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return 'blog';
+    const json = (await res.json()) as {
+      data?: { wpPages?: { nodes?: Array<{ slug: string; isPostsPage: boolean }> } };
+    };
+    const pp = (json?.data?.wpPages?.nodes ?? []).find((n) => n.isPostsPage);
+    return pp?.slug || 'blog';
+  } catch {
+    return 'blog';
+  }
+}
+
 export interface SoamesThemeOptions {
   /** WordPress GraphQL endpoint, e.g. http://soames.orbivision.net/graphql */
   wordpressUrl?: string;
@@ -58,7 +88,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
   const theme: AstroIntegration = {
     name: 'soames-astro-theme',
     hooks: {
-      'astro:config:setup': ({ config, updateConfig, injectRoute }) => {
+      'astro:config:setup': async ({ config, updateConfig, injectRoute }) => {
         const overrideDir = path.join(fileURLToPath(config.srcDir), 'overrides');
 
         updateConfig({
@@ -88,16 +118,26 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
           },
         });
 
+        // Blog base slug from the WP "Posts page" (Settings → Reading), or 'blog'.
+        const postsSlug = await fetchPostsSlug(wpUrl);
+
         // Theme-provided routes. A site file at the same path takes precedence
         // over an injected route, so sites can still override pages directly.
         injectRoute({ pattern: '/', entrypoint: 'soames-astro-theme/routes/index.astro' });
         injectRoute({ pattern: '/[...uri]', entrypoint: 'soames-astro-theme/routes/[...uri].astro' });
-        injectRoute({ pattern: '/blog/[...page]', entrypoint: 'soames-astro-theme/routes/blog/[...page].astro' });
+        // Blog archive lives at the Posts-page slug (default /blog/). Individual
+        // posts stay at /blog/post/<slug>/ regardless.
+        injectRoute({ pattern: `/${postsSlug}/[...page]`, entrypoint: 'soames-astro-theme/routes/blog/[...page].astro' });
         injectRoute({ pattern: '/blog/post/[...slug]', entrypoint: 'soames-astro-theme/routes/blog/post/[...slug].astro' });
         // Documentation (weDocs). Optional — generates 0 doc pages when weDocs
         // isn't installed (getDocs() returns []); /docs/ then shows an empty state.
         injectRoute({ pattern: '/docs', entrypoint: 'soames-astro-theme/routes/docs/index.astro' });
         injectRoute({ pattern: '/docs/[...slug]', entrypoint: 'soames-astro-theme/routes/docs/[...slug].astro' });
+
+        // When the blog moved off /blog/, redirect the old base path to it.
+        if (postsSlug !== 'blog') {
+          updateConfig({ redirects: { '/blog': `/${postsSlug}` } });
+        }
       },
     },
   };
