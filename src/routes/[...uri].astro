@@ -11,9 +11,14 @@ import { getPages } from "../lib/wp";
 export async function getStaticPaths() {
   const pages = await getPages();
   return pages
-    .filter((page) => page.uri !== "/") // front page handled by index.astro
+    .filter(
+      (page) =>
+        page.uri && // skip the assigned Posts page (uri is null) — it would
+        page.uri !== "/" && // crash page.uri.replace(); front page → index.astro
+        !page.isPostsPage // the blog archive renders the Posts page, not here
+    )
     .map((page) => {
-      const clean = page.uri.replace(/^\/+|\/+$/g, "");
+      const clean = page.uri!.replace(/^\/+|\/+$/g, "");
       return { params: { uri: clean || undefined }, props: { page } };
     });
 }
