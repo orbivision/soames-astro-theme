@@ -36,13 +36,13 @@ const { doc, tree } = Astro.props;
     <div class="media-container-row">
       <div class="col-12 col-lg-8">
         <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
-          <article class="blog-post" itemscope itemtype="http://schema.org/TechArticle">
+          <article class="blog-post soames-prose" itemscope itemtype="http://schema.org/TechArticle">
             <header>
               <h1 itemprop="headline">{doc.title}</h1>
             </header>
             {doc.content && (
               <section itemprop="articleBody" class="blog-post-content">
-                <Shortcodes html={doc.content} />
+                <Shortcodes html={doc.content} prose />
               </section>
             )}
           </article>
