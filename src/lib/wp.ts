@@ -37,7 +37,12 @@ export interface WpImage {
 export interface WpPage {
   databaseId: number;
   title: string;
-  uri: string;
+  // null for the assigned "Posts page" (WP serves the blog at its URL, so
+  // WPGraphQL returns no page uri) — callers must guard before using it.
+  uri: string | null;
+  slug: string;
+  isPostsPage: boolean;
+  isFrontPage: boolean;
   content: string;
   excerpt: string;
   overlayOpacity: number | null;
@@ -94,12 +99,15 @@ function normalizeImage(node: any): WpImage | null {
 export async function getPages(): Promise<WpPage[]> {
   // NOTE the alias `wpPages:` — required to pass Wordfence.
   const data = await wpQuery<{ wpPages: { nodes: any[] } }>(
-    `{ wpPages: pages(first: 100) { nodes { databaseId title uri content excerpt overlayOpacity ${IMAGE_FRAGMENT} } } }`
+    `{ wpPages: pages(first: 100) { nodes { databaseId title uri slug isPostsPage isFrontPage content excerpt overlayOpacity ${IMAGE_FRAGMENT} } } }`
   );
   return data.wpPages.nodes.map((n) => ({
     databaseId: n.databaseId,
     title: n.title,
-    uri: n.uri,
+    uri: n.uri ?? null,
+    slug: n.slug ?? "",
+    isPostsPage: !!n.isPostsPage,
+    isFrontPage: !!n.isFrontPage,
     content: n.content ?? "",
     excerpt: n.excerpt ?? "",
     overlayOpacity: typeof n.overlayOpacity === "number" ? n.overlayOpacity : null,
