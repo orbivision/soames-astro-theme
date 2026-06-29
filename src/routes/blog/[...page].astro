@@ -1,13 +1,20 @@
 ---
 // Paginated blog archive / blog roll (parity with blog-post-archive.tsx):
 // HeroHeader + posts as cards grouped 3-per-row + Read More + pagination.
-// Page 1 → /blog/ ; page N → /blog/<N>/ . postsPerPage from WP reading settings.
+// Lives at the slug of the WP "Posts page" (Settings > Reading), or /blog/ if
+// none is assigned — the base path is set by the route injected in integration.ts.
+// Hero (title/featured image/overlay) comes from that Posts page when present.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
-import { getPosts, getPostsPerPage, type WpPost } from "../../lib/wp";
+import { getPosts, getPostsPerPage, getPostsPage, type WpPost } from "../../lib/wp";
 
 export async function getStaticPaths() {
-  const [posts, perPage] = await Promise.all([getPosts(), getPostsPerPage()]);
+  const [posts, perPage, postsPage] = await Promise.all([
+    getPosts(),
+    getPostsPerPage(),
+    getPostsPage(),
+  ]);
+  const base = `/${postsPage?.slug || "blog"}`; // must match the injected route pattern
   const totalPages = Math.max(1, Math.ceil(posts.length / perPage));
 
   return Array.from({ length: totalPages }, (_, i) => {
@@ -19,14 +26,18 @@ export async function getStaticPaths() {
         posts: slice,
         pageNum,
         totalPages,
-        prevPath: pageNum > 1 ? (pageNum === 2 ? "/blog/" : `/blog/${pageNum - 1}/`) : null,
-        nextPath: pageNum < totalPages ? `/blog/${pageNum + 1}/` : null,
+        prevPath: pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null,
+        nextPath: pageNum < totalPages ? `${base}/${pageNum + 1}/` : null,
+        heroTitle: postsPage?.title || "Blog",
+        heroBg: postsPage?.featuredImage?.sourceUrl ?? null,
+        heroOverlay: postsPage?.overlayOpacity ?? 0.6,
       },
     };
   });
 }
 
-const { posts, pageNum, totalPages, prevPath, nextPath } = Astro.props;
+const { posts, pageNum, totalPages, prevPath, nextPath, heroTitle, heroBg, heroOverlay } =
+  Astro.props;
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 
@@ -37,8 +48,8 @@ const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: numb
   return groups;
 }, []);
 ---
-<Base pageTitle={`Blog${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
-  <HeroHeader title="Blog" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+<Base pageTitle={`${heroTitle}${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
+  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
 
   {posts.length === 0 ? (
     <p>No blog posts found. Add posts to your WordPress site and they'll appear here!</p>
