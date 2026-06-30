@@ -20,7 +20,15 @@ interface ShortcodesProps {
   // Astro passes slotted children as rendered nodes, not a raw string, so the
   // WP HTML comes in as an explicit `html` prop (only change for Astro).
   html: string;
+  // Prose mode (docs/blog bodies): render Gutenberg headings/paragraphs as plain,
+  // left-aligned HTML instead of the centered, padded marketing transform.
+  prose?: boolean;
 }
+
+// Set per-render in <Shortcodes>. Safe as a module-level flag because parse()
+// runs synchronously (no async boundary, single-threaded SSR/render), so one
+// parse completes before another begins.
+let proseMode = false;
 
 type Attributes = {
   [key: string]: string[];
@@ -35,6 +43,7 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
     // --- Gutenberg built-in block mappings ---
 
     if (classes.includes("wp-block-heading")) {
+      if (proseMode) return undefined; // keep the plain <h2>/<h3>, left-aligned
       return <SoamesTitle title={domToReact(children, opts)} />;
     }
 
@@ -44,6 +53,7 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
       const firstChild = children[0] as any;
       const isShortcode = firstChild?.type === "text" && firstChild?.data?.trim().startsWith("[");
       if (!isShortcode) {
+        if (proseMode) return undefined; // keep the plain <p>, left-aligned
         return (
           <section className="soames-section article soames-article">
             <div className="container col-md-10">
@@ -295,10 +305,12 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
   return undefined;
 };
 
-const Shortcodes: React.FC<ShortcodesProps> = ({ html }) => {
+const Shortcodes: React.FC<ShortcodesProps> = ({ html, prose = false }) => {
+  proseMode = !!prose;
   const reactElements = parse(html || "", {
     replace: handleShortcodes,
   });
+  proseMode = false;
 
   return <div>{reactElements}</div>;
 };
