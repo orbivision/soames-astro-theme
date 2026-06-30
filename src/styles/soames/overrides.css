@@ -1933,12 +1933,34 @@ section.lazy-placeholder:after {
   margin: 2rem 0;
 }
 
-/* The one exception to left-justify: images stay centered. */
-.soames-prose img {
+/* The one exception to left-justify: images in the article BODY stay centered.
+   Scoped to .blog-post-content so structural images (e.g. the author avatar in
+   the footer) keep their own layout. */
+.soames-prose .blog-post-content img {
   display: block;
   max-width: 100%;
   height: auto;
   margin: 1.5rem auto;
+}
+
+/* Author byline (Bio) — small rounded avatar beside left-aligned text. */
+.bio {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.bio-avatar {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0;
+}
+
+.bio p {
+  margin: 0;
 }
 
 /* ============================================================
