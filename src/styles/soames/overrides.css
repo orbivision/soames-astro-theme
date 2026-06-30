@@ -1896,11 +1896,12 @@ section.lazy-placeholder:after {
   margin-bottom: 0.35rem;
 }
 
-/* Code: dark block for fenced code, subtle chip for inline code. */
+/* Code: light block for fenced code, subtle chip for inline code. */
 .soames-prose pre {
-  background: #2e2e2e;
-  color: #f5f5f5;
+  background: #f5f5f5;
+  color: #232323;
   padding: 1rem 1.25rem;
+  border: 1px solid #e0ded8;
   border-radius: 6px;
   overflow-x: auto;
   margin: 0 0 1.25rem;
