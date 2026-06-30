@@ -34,14 +34,14 @@ const fmtDate = (d: string) =>
     <div class="media-container-row">
       <div class="col-12 col-lg-8">
         <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
-          <article class="blog-post" itemscope itemtype="http://schema.org/Article">
+          <article class="blog-post soames-prose" itemscope itemtype="http://schema.org/Article">
             <header>
               <h1 itemprop="headline">{post.title}</h1>
               <p>{fmtDate(post.date)}</p>
             </header>
             {post.content && (
               <section itemprop="articleBody" class="blog-post-content">
-                <Shortcodes html={post.content} />
+                <Shortcodes html={post.content} prose />
               </section>
             )}
             <hr />
