@@ -1,49 +1,58 @@
 ---
-// Documentation landing (/docs/). Same hero + two-column shell as a doc page:
-// the left column is an index of top-level sections (each linking out, with its
-// child articles listed beneath); the right column is the full docs nav. If
-// weDocs isn't installed getDocs() returns [] and we show a friendly empty state.
+// Documentation landing (/docs/): a full-width, blog-roll-style grid of cards —
+// one per doc article, no sidebar (parity with the blog archive). Each card links
+// to the doc. Docs are flattened depth-first (parents before children, in
+// menuOrder order). If no docs exist, getDocs() returns [] → empty state.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
-import DocsSidebar from "@theme/components/DocsSidebar";
-import { getDocs, buildDocTree } from "../../lib/wp";
+import { getDocs, buildDocTree, type WpDoc, type DocTreeNode } from "../../lib/wp";
 
 const docs = await getDocs();
-const tree = buildDocTree(docs);
+
+// Flatten the tree so every doc gets a card, parents ahead of their children.
+const flat: WpDoc[] = [];
+const walk = (nodes: DocTreeNode[]) =>
+  nodes.forEach((n) => {
+    flat.push(n);
+    walk(n.children);
+  });
+walk(buildDocTree(docs));
+
+// Group 3-per-row (parity with the blog roll).
+const rows: WpDoc[][] = flat.reduce((groups: WpDoc[][], doc: WpDoc, i: number) => {
+  if (i % 3 === 0) groups.push([doc]);
+  else groups[groups.length - 1].push(doc);
+  return groups;
+}, []);
 ---
 <Base pageTitle="Documentation" description="Documentation and guides.">
   <HeroHeader title="Documentation" subhead="" backgroundImage={null} overlayOpacity={0.6} />
-  <section>
-    <div class="media-container-row">
-      <div class="col-12 col-lg-8">
-        <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
-          <article class="blog-post">
-            {tree.length === 0 ? (
-              <p>Documentation is coming soon.</p>
-            ) : (
-              <div class="soames-docs-index">
-                {tree.map((section) => (
-                  <section class="soames-docs-index-section">
-                    <h2><a href={section.uri} set:html={section.title} /></h2>
-                    {section.children.length > 0 && (
-                      <ul>
-                        {section.children.map((child) => (
-                          <li><a href={child.uri} set:html={child.title} /></li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
-                ))}
+
+  {flat.length === 0 ? (
+    <section class="container pb-5">
+      <p>Documentation is coming soon.</p>
+    </section>
+  ) : (
+    <section class="soames-blog-roll">
+      <div class="container">
+        {rows.map((group) => (
+          <div class="media-container-row">
+            {group.map((doc) => (
+              <div class="card p-3 col-12 col-lg-4">
+                <div class="card-wrapper">
+                  <div class="card-box">
+                    <h4 class="card-title mbr-fonts-style display-5" set:html={doc.title} />
+                    {doc.excerpt && <div set:html={doc.excerpt} />}
+                  </div>
+                  <div class="mbr-section-btn text-center">
+                    <a href={doc.uri} class="btn btn-primary display-4"><span>Read</span></a>
+                  </div>
+                </div>
               </div>
-            )}
-          </article>
-        </section>
+            ))}
+          </div>
+        ))}
       </div>
-      <div class="col-12 col-lg-4">
-        <section id="soames-gatsby-sidebar-container" class="soames-gatsby-sidebar">
-          <DocsSidebar tree={tree} currentId={0} />
-        </section>
-      </div>
-    </div>
-  </section>
+    </section>
+  )}
 </Base>
