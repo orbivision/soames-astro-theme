@@ -85,6 +85,14 @@ export interface DocTreeNode extends WpDoc {
 
 const IMAGE_FRAGMENT = `featuredImage { node { sourceUrl altText mediaDetails { width height } } }`;
 
+// overlayOpacity arrives from WPGraphQL as a String ("0.4") or, defensively, a
+// number. Coerce to a finite number; null when missing/unparseable so callers
+// fall back to the HeroHeader default (0.6).
+function parseOverlayOpacity(value: unknown): number | null {
+  const n = typeof value === "number" ? value : parseFloat(String(value));
+  return Number.isFinite(n) ? n : null;
+}
+
 function normalizeImage(node: any): WpImage | null {
   const n = node?.featuredImage?.node;
   if (!n?.sourceUrl) return null;
@@ -110,7 +118,9 @@ export async function getPages(): Promise<WpPage[]> {
     isFrontPage: !!n.isFrontPage,
     content: n.content ?? "",
     excerpt: n.excerpt ?? "",
-    overlayOpacity: typeof n.overlayOpacity === "number" ? n.overlayOpacity : null,
+    // The plugin's WPGraphQL `overlayOpacity` field is typed String (e.g. "0.4"),
+    // so parse it to a number; null (→ HeroHeader default 0.6) if absent/invalid.
+    overlayOpacity: parseOverlayOpacity(n.overlayOpacity),
     featuredImage: normalizeImage(n),
   }));
 }
@@ -136,6 +146,43 @@ export async function getPostsPage(): Promise<WpPostsPage | null> {
     featuredImage: pp.featuredImage,
     overlayOpacity: pp.overlayOpacity,
   };
+}
+
+// The page chosen in Soames Settings → Documentation page, or null if none is
+// set. Drives the /docs/ landing hero (title + subhead + featured image +
+// overlay) — parity with getPostsPage() for the blog roll. The chosen page's ID
+// comes from the Soames REST settings (docsPageId); the hero fields come from
+// getPages. Decoupled from the GraphQL schema on purpose: an older plugin simply
+// omits docsPageId (→ null), so /docs/ falls back to its default hero and the
+// rest of the site is unaffected. Any failure degrades to null, never throws.
+export interface WpDocsPage {
+  databaseId: number;
+  title: string;
+  excerpt: string;
+  featuredImage: WpImage | null;
+  overlayOpacity: number | null;
+}
+export async function getDocsPage(): Promise<WpDocsPage | null> {
+  try {
+    const settings = await getSoamesSettings();
+    const id = settings.docsPageId;
+    if (!id) return null;
+    const dp = (await getPages()).find((p) => p.databaseId === id);
+    if (!dp) return null;
+    return {
+      databaseId: dp.databaseId,
+      title: dp.title,
+      excerpt: dp.excerpt,
+      featuredImage: dp.featuredImage,
+      overlayOpacity: dp.overlayOpacity,
+    };
+  } catch (err) {
+    console.warn(
+      "[soames] getDocsPage: could not resolve the docs hero page — using default hero.",
+      (err as Error).message
+    );
+    return null;
+  }
 }
 
 export async function getPosts(): Promise<WpPost[]> {
@@ -290,6 +337,10 @@ export interface SoamesSettings {
   contactBlurb: string | null;
   companyName: string | null;
   showCompanyName: boolean;
+  // Page ID chosen in Soames Settings → Documentation page (drives the /docs/
+  // hero). null when unset, or undefined against an older plugin that predates
+  // this field — getDocsPage() treats both as "no docs page".
+  docsPageId?: number | null;
 }
 export async function getSoamesSettings(): Promise<SoamesSettings> {
   const res = await fetch(`${BASE_URL}/wp-json/soames/v1/settings`, {
