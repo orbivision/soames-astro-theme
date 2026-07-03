@@ -1,7 +1,23 @@
-# soames-astro-theme
+<p align="center">
+  <a href="https://soames.app">
+    <img alt="Soames" src="https://raw.githubusercontent.com/orbivision/soames-astro-theme/main/assets/soames-mark.svg" width="60" />
+  </a>
+</p>
+<h1 align="center">
+  Soames Astro Theme
+</h1>
+
+[![npm version](https://img.shields.io/npm/v/soames-astro-theme.svg?style=flat-square)](https://www.npmjs.com/package/soames-astro-theme)
+[![license](https://img.shields.io/npm/l/soames-astro-theme.svg?style=flat-square)](./LICENSE)
 
 Shared **Astro** theme for the Soames ecosystem — WordPress as a headless CMS,
 static output, React islands. Successor to `soames-gatsby-theme` (see ORBI-23/24/25).
+
+## Install
+
+```
+npm install soames-astro-theme
+```
 
 ## Usage
 
@@ -47,5 +63,5 @@ the direct successor to Gatsby component shadowing.
 
 ## Status
 
-v0 — under active migration (ORBI-25). Routing/URL parity, menu interactivity,
-and remaining shortcodes are being completed phase by phase.
+Published to npm (ORBI-25). Under active migration — routing/URL parity, menu
+interactivity, and remaining shortcodes are being completed phase by phase.

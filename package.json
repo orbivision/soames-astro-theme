@@ -1,8 +1,36 @@
 {
   "name": "soames-astro-theme",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Shared Astro theme for the Soames ecosystem (WordPress headless + React islands). Successor to soames-gatsby-theme.",
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "astro-theme",
+    "wordpress",
+    "headless-cms",
+    "typescript",
+    "react",
+    "blog",
+    "personal-site"
+  ],
+  "author": "Orbi Software",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/orbivision/soames-astro-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/orbivision/soames-astro-theme/issues"
+  },
+  "homepage": "https://github.com/orbivision/soames-astro-theme#readme",
+  "engines": {
+    "node": ">=18.20.8",
+    "npm": ">=9.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": "./src/integration.ts",
     "./integration": "./src/integration.ts",
