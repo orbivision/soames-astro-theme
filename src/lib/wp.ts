@@ -172,10 +172,10 @@ export async function getPosts(): Promise<WpPost[]> {
 // documentation build normally. Aliased `wpDocs:` to dodge Wordfence (see top).
 export async function getDocs(): Promise<WpDoc[]> {
   try {
-    // NOTE: the weDocs `docs` CPT does not support excerpts, so `excerpt` is not
-    // a field on the Document type — don't query it.
+    // Our docs CPT (registered by the Soames plugin) supports excerpts, so
+    // `excerpt` is a field on the Document type — used for the /docs/ card grid.
     const data = await wpQuery<{ wpDocs: { nodes: any[] } }>(
-      `{ wpDocs: documents(first: 200) { nodes { databaseId title slug uri content menuOrder parentDatabaseId ${IMAGE_FRAGMENT} } } }`
+      `{ wpDocs: documents(first: 200) { nodes { databaseId title slug uri content excerpt menuOrder parentDatabaseId ${IMAGE_FRAGMENT} } } }`
     );
     return data.wpDocs.nodes.map((n) => ({
       databaseId: n.databaseId,
@@ -183,7 +183,7 @@ export async function getDocs(): Promise<WpDoc[]> {
       slug: n.slug,
       uri: n.uri,
       content: n.content ?? "",
-      excerpt: "",
+      excerpt: n.excerpt ?? "",
       menuOrder: n.menuOrder ?? 0,
       parentDatabaseId: n.parentDatabaseId ?? 0,
       featuredImage: normalizeImage(n),

@@ -1139,35 +1139,6 @@ section.lazy-placeholder:after {
   font-weight: 500;
 }
 
-/* ── Documentation landing index (/docs/) ──────────────────────────────────── */
-.soames-docs-index-section {
-  margin-bottom: 2rem;
-}
-
-.soames-docs-index-section h2 {
-  margin-bottom: 0.5rem;
-}
-
-.soames-docs-index-section h2 a {
-  text-decoration: none;
-}
-
-.soames-docs-index-section ul {
-  list-style: none;
-  margin: 0;
-  padding-left: 0;
-}
-
-.soames-docs-index-section li a {
-  display: inline-block;
-  padding: 0.25rem 0;
-  text-decoration: none;
-}
-
-.soames-docs-index-section li a:hover {
-  color: #bc361b;
-}
-
 .soames-menu .navbar {
   padding: .5rem 0;
   background: #bc361b;
