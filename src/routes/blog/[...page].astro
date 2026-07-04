@@ -36,8 +36,29 @@ export async function getStaticPaths() {
   });
 }
 
-const { posts, pageNum, totalPages, prevPath, nextPath, heroTitle, heroBg, heroOverlay } =
+let { posts, pageNum, totalPages, prevPath, nextPath, heroTitle, heroBg, heroOverlay } =
   Astro.props;
+
+// Dev only: refresh this archive page's data on each request (getStaticPaths is
+// cached for the life of `astro dev`, so WP edits wouldn't show until a restart).
+// Recomputes the same slice/hero as getStaticPaths for the current pageNum.
+// Removed from production builds (import.meta.env.DEV).
+if (import.meta.env.DEV) {
+  const [all, perPage, postsPage] = await Promise.all([
+    getPosts(),
+    getPostsPerPage(),
+    getPostsPage(),
+  ]);
+  const base = `/${postsPage?.slug || "blog"}`;
+  totalPages = Math.max(1, Math.ceil(all.length / perPage));
+  posts = all.slice((pageNum - 1) * perPage, pageNum * perPage);
+  prevPath = pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null;
+  nextPath = pageNum < totalPages ? `${base}/${pageNum + 1}/` : null;
+  heroTitle = postsPage?.title || "Blog";
+  heroBg = postsPage?.featuredImage?.sourceUrl ?? null;
+  heroOverlay = postsPage?.overlayOpacity ?? 0.6;
+}
+
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 

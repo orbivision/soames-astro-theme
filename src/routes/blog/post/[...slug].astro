@@ -23,7 +23,22 @@ export async function getStaticPaths() {
   }));
 }
 
-const { post, posts, previous, next } = Astro.props;
+let { post, posts, previous, next } = Astro.props;
+
+// Dev only: re-fetch on each request so WP edits show on refresh without
+// restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
+// from production builds (import.meta.env.DEV).
+if (import.meta.env.DEV) {
+  const all = await getPosts();
+  const i = all.findIndex((p) => p.slug === Astro.params.slug);
+  if (i !== -1) {
+    posts = all;
+    post = all[i];
+    previous = all[i + 1] ?? null;
+    next = all[i - 1] ?? null;
+  }
+}
+
 const img = post.featuredImage;
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
