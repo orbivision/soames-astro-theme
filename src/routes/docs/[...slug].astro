@@ -28,7 +28,20 @@ export async function getStaticPaths() {
     }));
 }
 
-const { doc, tree } = Astro.props;
+let { doc, tree } = Astro.props;
+
+// Dev only: re-fetch on each request so WP doc edits show on refresh without
+// restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
+// from production builds (import.meta.env.DEV).
+if (import.meta.env.DEV) {
+  const toSlug = (uri: string) => uri.replace(/^\/+|\/+$/g, "").replace(/^docs\/?/, "");
+  const docs = await getDocs();
+  const fresh = docs.find((d) => toSlug(d.uri) === Astro.params.slug);
+  if (fresh) {
+    doc = fresh;
+    tree = buildDocTree(docs);
+  }
+}
 ---
 <Base pageTitle={doc.title} description={doc.excerpt}>
   <HeroHeader title="Documentation" subhead="" backgroundImage={null} overlayOpacity={0.6} />

@@ -23,7 +23,19 @@ export async function getStaticPaths() {
     });
 }
 
-const { page } = Astro.props;
+let { page } = Astro.props;
+
+// Dev only: getStaticPaths (and the WP content it bakes into props) is cached for
+// the life of `astro dev`, so edits in WordPress wouldn't show until a restart.
+// Re-fetch the current page on each request in dev so a browser refresh reflects
+// content changes. Tree-shaken out of production builds (import.meta.env.DEV).
+if (import.meta.env.DEV) {
+  const clean = (Astro.params.uri ?? "").replace(/^\/+|\/+$/g, "");
+  const fresh = (await getPages()).find(
+    (p) => (p.uri ?? "").replace(/^\/+|\/+$/g, "") === clean
+  );
+  if (fresh) page = fresh;
+}
 ---
 <Base pageTitle={page.title} description={page.excerpt}>
   <HeroHeader
