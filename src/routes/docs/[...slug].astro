@@ -7,7 +7,7 @@ import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
-import { getDocs, buildDocTree } from "../../lib/wp";
+import { getDocs, buildDocTree, getDocsPage } from "../../lib/wp";
 
 export async function getStaticPaths() {
   // Derive the [...slug] param from the doc's WP uri (e.g. /docs/getting-started/
@@ -19,16 +19,23 @@ export async function getStaticPaths() {
 
   const docs = await getDocs();
   const tree = buildDocTree(docs);
+  // Single docs inherit the /docs/ page hero — title, background image, overlay —
+  // falling back to "Documentation" / placeholder when none is set. Fetched once
+  // here and shared across all paths (one WP round-trip).
+  const docsPage = await getDocsPage();
+  const heroTitle = docsPage?.title ?? "Documentation";
+  const heroBg = docsPage?.featuredImage?.sourceUrl ?? null;
+  const heroOverlay = docsPage?.overlayOpacity ?? null;
   return docs
     .map((doc) => ({ doc, slug: toSlug(doc.uri) }))
     .filter(({ slug }) => slug.length > 0)
     .map(({ doc, slug }) => ({
       params: { slug },
-      props: { doc, tree },
+      props: { doc, tree, heroTitle, heroBg, heroOverlay },
     }));
 }
 
-let { doc, tree } = Astro.props;
+let { doc, tree, heroTitle, heroBg, heroOverlay } = Astro.props;
 
 // Dev only: re-fetch on each request so WP doc edits show on refresh without
 // restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
@@ -41,10 +48,14 @@ if (import.meta.env.DEV) {
     doc = fresh;
     tree = buildDocTree(docs);
   }
+  const dp = await getDocsPage();
+  heroTitle = dp?.title ?? "Documentation";
+  heroBg = dp?.featuredImage?.sourceUrl ?? null;
+  heroOverlay = dp?.overlayOpacity ?? null;
 }
 ---
 <Base pageTitle={doc.title} description={doc.excerpt}>
-  <HeroHeader title="Documentation" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
       <div class="col-12 col-lg-8">

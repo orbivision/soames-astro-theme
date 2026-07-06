@@ -8,10 +8,17 @@ import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import Bio from "@theme/components/Bio";
 import BlogSidebar from "@theme/components/BlogSidebar";
-import { getPosts } from "../../../lib/wp";
+import { getPosts, getPostsPage } from "../../../lib/wp";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
+  // Single posts inherit the posts page (blog roll) hero — title, background
+  // image, overlay — falling back to "Blog" / placeholder when none is set.
+  // Fetched once here and shared across all paths (one WP round-trip).
+  const postsPage = await getPostsPage();
+  const heroTitle = postsPage?.title ?? "Blog";
+  const heroBg = postsPage?.featuredImage?.sourceUrl ?? null;
+  const heroOverlay = postsPage?.overlayOpacity ?? null;
   return posts.map((post, i) => ({
     params: { slug: post.slug },
     props: {
@@ -19,11 +26,14 @@ export async function getStaticPaths() {
       posts,
       previous: posts[i + 1] ?? null, // posts are date DESC → next index is older
       next: posts[i - 1] ?? null,
+      heroTitle,
+      heroBg,
+      heroOverlay,
     },
   }));
 }
 
-let { post, posts, previous, next } = Astro.props;
+let { post, posts, previous, next, heroTitle, heroBg, heroOverlay } = Astro.props;
 
 // Dev only: re-fetch on each request so WP edits show on refresh without
 // restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
@@ -37,6 +47,10 @@ if (import.meta.env.DEV) {
     previous = all[i + 1] ?? null;
     next = all[i - 1] ?? null;
   }
+  const pp = await getPostsPage();
+  heroTitle = pp?.title ?? "Blog";
+  heroBg = pp?.featuredImage?.sourceUrl ?? null;
+  heroOverlay = pp?.overlayOpacity ?? null;
 }
 
 const img = post.featuredImage;
@@ -44,7 +58,7 @@ const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 ---
 <Base pageTitle={post.title} description={post.excerpt}>
-  <HeroHeader title="Blog" subhead="" backgroundImage={null} overlayOpacity={0.6} />
+  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
       <div class="col-12 col-lg-8">
