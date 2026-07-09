@@ -1153,6 +1153,53 @@ section.lazy-placeholder:after {
   font-weight: 500;
 }
 
+/* ── Article breadcrumbs (Breadcrumbs) ─────────────────────────────────────── */
+.soames-breadcrumbs-nav {
+  font-family: 'Rubik', sans-serif;
+}
+
+.soames-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #6c6c6c;
+}
+
+.soames-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+/* Separator between crumbs, drawn in CSS so it isn't selectable or announced. */
+.soames-breadcrumb-item + .soames-breadcrumb-item::before {
+  content: "›";
+  margin: 0 0.5rem;
+  color: #b3b0aa;
+}
+
+.soames-breadcrumb-item a {
+  color: #6c6c6c;
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
+}
+
+.soames-breadcrumb-item a:hover,
+.soames-breadcrumb-item a:focus {
+  color: #bc361b;
+  text-decoration: underline;
+}
+
+/* Current page: no link, reads a touch stronger than the ancestors. */
+.soames-breadcrumb-item [aria-current="page"] {
+  color: #232323;
+}
+
 .soames-menu .navbar {
   padding: .5rem 0;
   background: #bc361b;

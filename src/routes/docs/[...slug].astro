@@ -7,7 +7,8 @@ import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
-import { getDocs, buildDocTree, getDocsPage } from "../../lib/wp";
+import Breadcrumbs from "@theme/components/Breadcrumbs";
+import { getDocs, buildDocTree, getDocsPage, docAncestors } from "../../lib/wp";
 
 export async function getStaticPaths() {
   // Derive the [...slug] param from the doc's WP uri (e.g. /docs/getting-started/
@@ -31,18 +32,18 @@ export async function getStaticPaths() {
     .filter(({ slug }) => slug.length > 0)
     .map(({ doc, slug }) => ({
       params: { slug },
-      props: { doc, tree, heroTitle, heroBg, heroOverlay },
+      props: { doc, docs, tree, heroTitle, heroBg, heroOverlay },
     }));
 }
 
-let { doc, tree, heroTitle, heroBg, heroOverlay } = Astro.props;
+let { doc, docs, tree, heroTitle, heroBg, heroOverlay } = Astro.props;
 
 // Dev only: re-fetch on each request so WP doc edits show on refresh without
 // restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
 // from production builds (import.meta.env.DEV).
 if (import.meta.env.DEV) {
   const toSlug = (uri: string) => uri.replace(/^\/+|\/+$/g, "").replace(/^docs\/?/, "");
-  const docs = await getDocs();
+  docs = await getDocs();
   const fresh = docs.find((d) => toSlug(d.uri) === Astro.params.slug);
   if (fresh) {
     doc = fresh;
@@ -53,6 +54,15 @@ if (import.meta.env.DEV) {
   heroBg = dp?.featuredImage?.sourceUrl ?? null;
   heroOverlay = dp?.overlayOpacity ?? null;
 }
+
+// Breadcrumb trail: Home › <docs landing> › <ancestors…> › current (plain text).
+// Ancestors come from the parentDatabaseId chain (data, not the URI).
+const crumbs = [
+  { label: "Home", href: "/" },
+  { label: heroTitle, href: "/docs/" },
+  ...docAncestors(docs, doc.databaseId).map((a) => ({ label: a.title, href: a.uri })),
+  { label: doc.title },
+];
 ---
 <Base pageTitle={doc.title} description={doc.excerpt}>
   <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
@@ -62,6 +72,7 @@ if (import.meta.env.DEV) {
         <section id="soames-gatsby-content-container" class="soames-gatsby-blog-content">
           <article class="blog-post soames-prose" itemscope itemtype="http://schema.org/TechArticle">
             <header>
+              <Breadcrumbs crumbs={crumbs} />
               <h1 itemprop="headline">{doc.title}</h1>
             </header>
             {doc.content && (

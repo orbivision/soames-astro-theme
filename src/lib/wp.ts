@@ -263,6 +263,25 @@ export function buildDocTree(docs: WpDoc[]): DocTreeNode[] {
   return roots;
 }
 
+// Walk the parentDatabaseId chain up from a doc, returning its ancestors in
+// root→parent order (excluding the doc itself). Used for breadcrumbs. Derives
+// from the data, not the URI, because slugs don't always match titles and we
+// need each ancestor's title as well as its uri. The depth cap guards against a
+// malformed cycle in parentDatabaseId.
+export function docAncestors(docs: WpDoc[], databaseId: number): WpDoc[] {
+  const byId = new Map<number, WpDoc>(docs.map((d) => [d.databaseId, d]));
+  const chain: WpDoc[] = [];
+  let current = byId.get(databaseId);
+  let guard = 0;
+  while (current && current.parentDatabaseId && guard++ < 50) {
+    const parent = byId.get(current.parentDatabaseId);
+    if (!parent) break;
+    chain.unshift(parent);
+    current = parent;
+  }
+  return chain;
+}
+
 export async function getGeneralSettings(): Promise<{ title: string; description: string }> {
   const data = await wpQuery<{ generalSettings: { title: string; description: string } }>(
     `{ generalSettings { title description } }`
