@@ -1108,9 +1108,23 @@ section.lazy-placeholder:after {
   padding: 0;
 }
 
-/* Nested levels indent under their parent. */
+/* Own the vertical rhythm locally instead of inheriting the global `ul li`
+   margin from wordpress-blocks.css. That global margin is cancelled on a
+   submenu's first item by `.soames-docs-menu { margin: 0 }`, which left the
+   first link under a parent with no gap above it. Reset it, then apply one
+   uniform step between every item. */
+.soames-docs-menu-item {
+  margin: 0;
+}
+.soames-docs-menu-item + .soames-docs-menu-item {
+  margin-top: 1rem;
+}
+
+/* Nested levels indent under their parent, and sit a full step below the parent
+   link so the first child matches the spacing between all other items. */
 .soames-docs-submenu {
   margin-left: 0.85rem;
+  margin-top: 1rem;
 }
 
 .soames-docs-menu-item > a {
