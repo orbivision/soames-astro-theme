@@ -46,6 +46,9 @@ export interface WpPage {
   content: string;
   excerpt: string;
   overlayOpacity: number | null;
+  // Dedicated hero background image URL from the plugin (ORBI-41). Takes priority
+  // over featuredImage for the hero backdrop; null when unset. See resolveHeroBg.
+  heroBackgroundImage: string | null;
   featuredImage: WpImage | null;
 }
 export interface WpAuthor {
@@ -93,6 +96,19 @@ function parseOverlayOpacity(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// Resolve the hero backdrop URL from a page (or posts/docs page): the dedicated
+// hero background image wins, then the featured image, then null (→ HeroHeader
+// applies its picsum placeholder). Single source of truth for levels 1→2 of the
+// ORBI-41 fallback chain; level 3 (picsum) lives in HeroHeader.
+export function resolveHeroBg(
+  page:
+    | { heroBackgroundImage?: string | null; featuredImage?: WpImage | null }
+    | null
+    | undefined
+): string | null {
+  return page?.heroBackgroundImage ?? page?.featuredImage?.sourceUrl ?? null;
+}
+
 function normalizeImage(node: any): WpImage | null {
   const n = node?.featuredImage?.node;
   if (!n?.sourceUrl) return null;
@@ -107,7 +123,7 @@ function normalizeImage(node: any): WpImage | null {
 export async function getPages(): Promise<WpPage[]> {
   // NOTE the alias `wpPages:` — required to pass Wordfence.
   const data = await wpQuery<{ wpPages: { nodes: any[] } }>(
-    `{ wpPages: pages(first: 100) { nodes { databaseId title uri slug isPostsPage isFrontPage content excerpt overlayOpacity ${IMAGE_FRAGMENT} } } }`
+    `{ wpPages: pages(first: 100) { nodes { databaseId title uri slug isPostsPage isFrontPage content excerpt overlayOpacity heroBackgroundImage ${IMAGE_FRAGMENT} } } }`
   );
   return data.wpPages.nodes.map((n) => ({
     databaseId: n.databaseId,
@@ -121,6 +137,10 @@ export async function getPages(): Promise<WpPage[]> {
     // The plugin's WPGraphQL `overlayOpacity` field is typed String (e.g. "0.4"),
     // so parse it to a number; null (→ HeroHeader default 0.6) if absent/invalid.
     overlayOpacity: parseOverlayOpacity(n.overlayOpacity),
+    // Dedicated hero background image URL (ORBI-41); the plugin resolves it to
+    // null when unset. (Ships with the plugin that already provides overlayOpacity
+    // above, so the query requires no older-plugin fallback beyond that.)
+    heroBackgroundImage: n.heroBackgroundImage ?? null,
     featuredImage: normalizeImage(n),
   }));
 }
@@ -133,6 +153,7 @@ export interface WpPostsPage {
   databaseId: number;
   slug: string;
   title: string;
+  heroBackgroundImage: string | null;
   featuredImage: WpImage | null;
   overlayOpacity: number | null;
 }
@@ -143,6 +164,7 @@ export async function getPostsPage(): Promise<WpPostsPage | null> {
     databaseId: pp.databaseId,
     slug: pp.slug,
     title: pp.title,
+    heroBackgroundImage: pp.heroBackgroundImage,
     featuredImage: pp.featuredImage,
     overlayOpacity: pp.overlayOpacity,
   };
@@ -159,6 +181,7 @@ export interface WpDocsPage {
   databaseId: number;
   title: string;
   excerpt: string;
+  heroBackgroundImage: string | null;
   featuredImage: WpImage | null;
   overlayOpacity: number | null;
 }
@@ -173,6 +196,7 @@ export async function getDocsPage(): Promise<WpDocsPage | null> {
       databaseId: dp.databaseId,
       title: dp.title,
       excerpt: dp.excerpt,
+      heroBackgroundImage: dp.heroBackgroundImage,
       featuredImage: dp.featuredImage,
       overlayOpacity: dp.overlayOpacity,
     };

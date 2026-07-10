@@ -8,7 +8,7 @@ import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import Bio from "@theme/components/Bio";
 import BlogSidebar from "@theme/components/BlogSidebar";
-import { getPosts, getPostsPage } from "../../../lib/wp";
+import { getPosts, getPostsPage, resolveHeroBg } from "../../../lib/wp";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
@@ -17,7 +17,7 @@ export async function getStaticPaths() {
   // Fetched once here and shared across all paths (one WP round-trip).
   const postsPage = await getPostsPage();
   const heroTitle = postsPage?.title ?? "Blog";
-  const heroBg = postsPage?.featuredImage?.sourceUrl ?? null;
+  const heroBg = resolveHeroBg(postsPage);
   const heroOverlay = postsPage?.overlayOpacity ?? null;
   return posts.map((post, i) => ({
     params: { slug: post.slug },
@@ -49,7 +49,7 @@ if (import.meta.env.DEV) {
   }
   const pp = await getPostsPage();
   heroTitle = pp?.title ?? "Blog";
-  heroBg = pp?.featuredImage?.sourceUrl ?? null;
+  heroBg = resolveHeroBg(pp);
   heroOverlay = pp?.overlayOpacity ?? null;
 }
 

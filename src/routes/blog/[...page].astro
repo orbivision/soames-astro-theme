@@ -6,7 +6,7 @@
 // Hero (title/featured image/overlay) comes from that Posts page when present.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
-import { getPosts, getPostsPerPage, getPostsPage, type WpPost } from "../../lib/wp";
+import { getPosts, getPostsPerPage, getPostsPage, resolveHeroBg, type WpPost } from "../../lib/wp";
 
 export async function getStaticPaths() {
   const [posts, perPage, postsPage] = await Promise.all([
@@ -29,7 +29,7 @@ export async function getStaticPaths() {
         prevPath: pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null,
         nextPath: pageNum < totalPages ? `${base}/${pageNum + 1}/` : null,
         heroTitle: postsPage?.title || "Blog",
-        heroBg: postsPage?.featuredImage?.sourceUrl ?? null,
+        heroBg: resolveHeroBg(postsPage),
         heroOverlay: postsPage?.overlayOpacity ?? 0.6,
       },
     };
@@ -55,7 +55,7 @@ if (import.meta.env.DEV) {
   prevPath = pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null;
   nextPath = pageNum < totalPages ? `${base}/${pageNum + 1}/` : null;
   heroTitle = postsPage?.title || "Blog";
-  heroBg = postsPage?.featuredImage?.sourceUrl ?? null;
+  heroBg = resolveHeroBg(postsPage);
   heroOverlay = postsPage?.overlayOpacity ?? 0.6;
 }
 

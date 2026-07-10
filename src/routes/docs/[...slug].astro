@@ -8,7 +8,7 @@ import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
 import Breadcrumbs from "@theme/components/Breadcrumbs";
-import { getDocs, buildDocTree, getDocsPage, docAncestors } from "../../lib/wp";
+import { getDocs, buildDocTree, getDocsPage, docAncestors, resolveHeroBg } from "../../lib/wp";
 
 export async function getStaticPaths() {
   // Derive the [...slug] param from the doc's WP uri (e.g. /docs/getting-started/
@@ -25,7 +25,7 @@ export async function getStaticPaths() {
   // here and shared across all paths (one WP round-trip).
   const docsPage = await getDocsPage();
   const heroTitle = docsPage?.title ?? "Documentation";
-  const heroBg = docsPage?.featuredImage?.sourceUrl ?? null;
+  const heroBg = resolveHeroBg(docsPage);
   const heroOverlay = docsPage?.overlayOpacity ?? null;
   return docs
     .map((doc) => ({ doc, slug: toSlug(doc.uri) }))
@@ -51,7 +51,7 @@ if (import.meta.env.DEV) {
   }
   const dp = await getDocsPage();
   heroTitle = dp?.title ?? "Documentation";
-  heroBg = dp?.featuredImage?.sourceUrl ?? null;
+  heroBg = resolveHeroBg(dp);
   heroOverlay = dp?.overlayOpacity ?? null;
 }
 

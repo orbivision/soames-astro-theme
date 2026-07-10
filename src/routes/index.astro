@@ -6,7 +6,7 @@ import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
-import { getPages, getPosts } from "../lib/wp";
+import { getPages, getPosts, resolveHeroBg } from "../lib/wp";
 
 const pages = await getPages();
 const front = pages.find((p) => p.uri === "/");
@@ -17,7 +17,7 @@ const posts = front ? [] : await getPosts();
     <HeroHeader
       title={front.title}
       subhead={front.excerpt}
-      backgroundImage={front.featuredImage?.sourceUrl ?? null}
+      backgroundImage={resolveHeroBg(front)}
       overlayOpacity={front.overlayOpacity}
     />
     {front.content && (

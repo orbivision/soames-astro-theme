@@ -5,7 +5,7 @@
 // menuOrder order). If no docs exist, getDocs() returns [] → empty state.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
-import { getDocs, getDocsPage, buildDocTree, type WpDoc, type DocTreeNode } from "../../lib/wp";
+import { getDocs, getDocsPage, buildDocTree, resolveHeroBg, type WpDoc, type DocTreeNode } from "../../lib/wp";
 
 const docs = await getDocs();
 // Hero is driven by the WP page chosen in Soames Settings → Documentation page,
@@ -32,7 +32,7 @@ const rows: WpDoc[][] = flat.reduce((groups: WpDoc[][], doc: WpDoc, i: number) =
   <HeroHeader
     title={docsPage?.title ?? "Documentation"}
     subhead={docsPage?.excerpt ?? ""}
-    backgroundImage={docsPage?.featuredImage?.sourceUrl ?? null}
+    backgroundImage={resolveHeroBg(docsPage)}
     overlayOpacity={docsPage?.overlayOpacity ?? 0.6}
   />
 
