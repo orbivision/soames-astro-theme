@@ -1779,6 +1779,14 @@ section.lazy-placeholder:after {
   color: #000000;
 }
 
+/* ORBI-42: the refactored Soames Text List carries its own symmetric top/bottom
+   padding (replacing the old manual <br><br> spacers). Scoped to this class so
+   other .soames-list consumers keep their existing spacing. */
+.soames-text-list {
+  padding-top: 45px;
+  padding-bottom: 45px;
+}
+
 .soames-footer {
   padding-top: 15px;
   padding-bottom: 15px;

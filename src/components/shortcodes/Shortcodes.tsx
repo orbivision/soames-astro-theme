@@ -205,6 +205,17 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
     }
 
     if (classes.includes("wp-block-soames-text-list")) {
+      const attrs = (node as DomElement).attribs;
+      // ORBI-42: new blocks emit JSON `data-items` (one HTML chunk per list item).
+      // Old blocks emit their inner HTML directly — keep rendering that as-is.
+      if (attrs["data-items"]) {
+        try {
+          const items = JSON.parse(attrs["data-items"]);
+          if (Array.isArray(items)) return <SoamesTextList items={items} />;
+        } catch {
+          /* malformed JSON — fall through to the legacy passthrough below */
+        }
+      }
       return (
         <section className="soames-section article soames-list pb-0">
           <div className="container">
