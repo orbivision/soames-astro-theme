@@ -134,9 +134,9 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
                     <div className={`card ${css ?? ""}`}>
                       <div className="media"><div className="media-body"></div></div>
                       <div className="card-box">
-                        <p className="block-text mbr-fonts-style display-7">
+                        <div className="block-text mbr-fonts-style display-7">
                           {domToReact(children, opts)}
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </div>
