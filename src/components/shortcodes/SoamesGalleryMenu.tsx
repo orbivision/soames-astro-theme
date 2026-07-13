@@ -24,12 +24,16 @@ interface GalleryMenuItem {
   css?: string | null;
 }
 
+// ORBI-44: "standard" = 3 items per row, "compact" = 4 items per row.
+type GalleryMenuLayout = "standard" | "compact";
+
 interface SoamesGalleryMenuProps {
   items?: GalleryMenuItemInput[];
   attributes?: GalleryMenuAttributes;
+  layout?: GalleryMenuLayout;
 }
 
-const SoamesGalleryMenu: React.FC<SoamesGalleryMenuProps> = ({ items, attributes }) => {
+const SoamesGalleryMenu: React.FC<SoamesGalleryMenuProps> = ({ items, attributes, layout = "standard" }) => {
   const normalizeUrl = (url: string) => (url ?? "").replace(/['""]+/g, '"');
 
   let menuItems: GalleryMenuItem[];
@@ -57,12 +61,15 @@ const SoamesGalleryMenu: React.FC<SoamesGalleryMenuProps> = ({ items, attributes
   // Drop rows with no image (e.g. a trailing comma in the legacy format).
   menuItems = menuItems.filter((item) => item.imageUrl.trim().length > 0);
 
+  // Standard fits 3 across (col-lg-4); compact fits 4 across (col-lg-3).
+  const colClass = layout === "compact" ? "col-lg-3" : "col-lg-4";
+
   return (
-    <section className="features1 soames-gallery-menu">
+    <section className={`features1 soames-gallery-menu soames-gallery-menu--${layout}`}>
       <div className="container-fluid">
         <div className="media-container-row">
           {menuItems.map(menuItem => (
-            <div key={menuItem.id} className="card p-3 col-md-12 col-lg-3">
+            <div key={menuItem.id} className={`card p-3 col-md-12 ${colClass}`}>
               <div className="card-wrapper">
                 <div className="card-img">
                   <a href={menuItem.link ?? "#"}>

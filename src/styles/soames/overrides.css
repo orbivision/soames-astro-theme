@@ -914,6 +914,14 @@ section.lazy-placeholder:after {
     max-width: 20%;
     padding: 15px;
   }
+
+  /* ORBI-44: the shared .media-container-row is nowrap at >=992px, which forces
+     every gallery card onto one line. Re-enable wrapping (scoped to the gallery,
+     higher specificity so it wins) so the column classes below wrap into rows —
+     standard (col-lg-4) = 3 per row, compact (col-lg-3) = 4 per row. */
+  .soames-gallery-menu .media-container-row {
+    flex-wrap: wrap;
+  }
 }
 
 .media-wrap-icon {

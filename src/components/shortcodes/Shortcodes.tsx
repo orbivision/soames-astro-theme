@@ -155,11 +155,14 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
 
     if (classes.includes("wp-block-soames-gallery-menu")) {
       const attrs = (node as DomElement).attribs;
+      // ORBI-44: "compact" fits 4 per row; anything else defaults to "standard".
+      const layout = attrs["data-layout"] === "compact" ? "compact" : "standard";
       // ORBI-20: prefer JSON `data-items`, fall back to legacy comma attrs.
       if (attrs["data-items"]) {
         try {
           const items = JSON.parse(attrs["data-items"]);
-          if (Array.isArray(items)) return <SoamesGalleryMenu items={items} />;
+          if (Array.isArray(items))
+            return <SoamesGalleryMenu items={items} layout={layout} />;
         } catch {
           /* malformed JSON — fall through to legacy parsing below */
         }
@@ -167,6 +170,7 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
       const csv = (key: string) => (attrs[key] ?? "").split(",");
       return (
         <SoamesGalleryMenu
+          layout={layout}
           attributes={{
             images: csv("data-images"),
             labels: csv("data-labels"),
