@@ -878,6 +878,28 @@ section.lazy-placeholder:after {
   background-color: #fff;
 }
 
+/* ORBI-44: keep every tile the same size regardless of the source image's
+   aspect ratio. Without this, images render at their natural height, so an
+   oddly-shaped photo makes its card shorter than its neighbours. A fixed 4:3
+   box + object-fit:cover normalizes them (4:3 source images are not cropped).
+   min-width:0 stops a large image from blowing its flex card past the column
+   width, so the columns share the row evenly. */
+.soames-gallery-menu .card {
+  min-width: 0;
+}
+
+.soames-gallery-menu .card-img {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.soames-gallery-menu .card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .soames-gallery-menu .card-box {
   background-color: #ffffff;
   padding: 2rem;

@@ -66,7 +66,7 @@ const SoamesGalleryMenu: React.FC<SoamesGalleryMenuProps> = ({ items, attributes
 
   return (
     <section className={`features1 soames-gallery-menu soames-gallery-menu--${layout}`}>
-      <div className="container-fluid">
+      <div className="container">
         <div className="media-container-row">
           {menuItems.map(menuItem => (
             <div key={menuItem.id} className={`card p-3 col-md-12 ${colClass}`}>
