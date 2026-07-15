@@ -2039,7 +2039,7 @@ section.lazy-placeholder:after {
    title + nav text against it. Applies to every site via the theme.
    ============================================================ */
 .soames-menu .menu-logo .navbar-caption img {
-  height: 52px;
+  height: 42px; /* ORBI-45: was 52px — trimmed ~10px; flex still centers it */
   width: auto;
   position: relative;
   top: -2px; /* cancels the caption nudge below so the logo stays put */
