@@ -1583,7 +1583,7 @@ section.lazy-placeholder:after {
   }
 
   .soames-menu img {
-    height: 3.2rem !important; /* ORBI-45: was 3.8rem — ~10px smaller, matches desktop trim */
+    height: 42px !important; /* ORBI-45: match the 42px desktop logo (was 3.2rem/51px — too large on mobile) */
   }
 
   .soames-menu .btn {
