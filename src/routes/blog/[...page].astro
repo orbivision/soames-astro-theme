@@ -7,6 +7,7 @@
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import { getPosts, getPostsPerPage, getPostsPage, resolveHeroBg, type WpPost } from "../../lib/wp";
+import { formatPostDate } from "../../lib/date";
 
 export async function getStaticPaths() {
   const [posts, perPage, postsPage] = await Promise.all([
@@ -59,9 +60,6 @@ if (import.meta.env.DEV) {
   heroOverlay = postsPage?.overlayOpacity ?? 0.6;
 }
 
-const fmtDate = (d: string) =>
-  new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
-
 // Group posts 3-per-row (parity with the Gatsby blog roll).
 const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: number) => {
   if (i % 3 === 0) groups.push([post]);
@@ -84,7 +82,7 @@ const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: numb
                 <div class="card-wrapper">
                   <div class="card-box">
                     <h4 class="card-title mbr-fonts-style display-5">{post.title}</h4>
-                    <h4 class="mbr-fonts-style display-7">{fmtDate(post.date)}</h4>
+                    <h4 class="mbr-fonts-style display-7">{formatPostDate(post.date)}</h4>
                     <div set:html={post.excerpt} />
                   </div>
                   <div class="mbr-section-btn text-center">

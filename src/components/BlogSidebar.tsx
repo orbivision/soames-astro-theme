@@ -4,6 +4,7 @@
 import React from "react";
 import parse from "html-react-parser";
 import type { WpPost } from "../lib/wp";
+import { formatPostDate } from "../lib/date";
 
 interface BlogSidebarProps {
   posts: WpPost[];
@@ -23,7 +24,7 @@ const BlogSidebar: React.FC<BlogSidebarProps> = ({ posts, currentId }) => {
                     <h4 className="card-title mbr-fonts-style display-5">
                       {parse(post.title)}
                     </h4>
-                    <h4 className="mbr-fonts-style display-7">{post.date}</h4>
+                    <h4 className="mbr-fonts-style display-7">{formatPostDate(post.date)}</h4>
                     {parse(post.excerpt)}
                   </div>
                   <div className="mbr-section-btn text-center">

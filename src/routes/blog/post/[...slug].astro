@@ -9,6 +9,7 @@ import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import Bio from "@theme/components/Bio";
 import BlogSidebar from "@theme/components/BlogSidebar";
 import { getPosts, getPostsPage, resolveHeroBg } from "../../../lib/wp";
+import { formatPostDate } from "../../../lib/date";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
@@ -54,8 +55,6 @@ if (import.meta.env.DEV) {
 }
 
 const img = post.featuredImage;
-const fmtDate = (d: string) =>
-  new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
 ---
 <Base pageTitle={post.title} description={post.excerpt}>
   <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
@@ -66,7 +65,7 @@ const fmtDate = (d: string) =>
           <article class="blog-post soames-prose" itemscope itemtype="http://schema.org/Article">
             <header>
               <h1 itemprop="headline">{post.title}</h1>
-              <p>{fmtDate(post.date)}</p>
+              <p>{formatPostDate(post.date)}</p>
             </header>
             {post.content && (
               <section itemprop="articleBody" class="blog-post-content">
