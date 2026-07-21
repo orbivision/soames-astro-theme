@@ -24,13 +24,26 @@ interface Icon {
   css?: string | null;
 }
 
+type IconSize = "small" | "medium" | "large";
+
 interface SoamesIconListProps {
   items?: IconItem[];
   attributes?: IconListAttributes;
+  size?: IconSize;
 }
 
-const SoamesIconList: React.FC<SoamesIconListProps> = ({ items, attributes }) => {
+// ORBI-49: fixed icon-image height per size. Applied as an inline style so it wins
+// on both pages and posts — on posts `.soames-prose .blog-post-content img{height:auto}`
+// would otherwise override a plain height attribute.
+const ICON_HEIGHTS: Record<IconSize, number> = {
+  small: 116,
+  medium: 256,
+  large: 512,
+};
+
+const SoamesIconList: React.FC<SoamesIconListProps> = ({ items, attributes, size = "small" }) => {
   const normalizeUrl = (url: string) => (url ?? "").replace(/['""]+/g, '"');
+  const heightPx = ICON_HEIGHTS[size] ?? ICON_HEIGHTS.small;
 
   let icons: Icon[];
   if (items && items.length) {
@@ -75,7 +88,7 @@ const SoamesIconList: React.FC<SoamesIconListProps> = ({ items, attributes }) =>
                 className="d-block mb-2"
                 src={icon.imageUrl}
                 alt={icon.label ?? ""}
-                height="116"
+                style={{ height: `${heightPx}px`, width: "auto" }}
                 loading="lazy"
               />
               <span className="text-muted">{icon.label}</span>
