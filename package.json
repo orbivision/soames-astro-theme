@@ -1,7 +1,7 @@
 {
   "name": "soames-astro-theme",
   "type": "module",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Shared Astro theme for the Soames ecosystem (WordPress headless + React islands). Successor to soames-gatsby-theme.",
   "keywords": [
     "astro",
@@ -58,7 +58,8 @@
   "dependencies": {
     "@astrojs/react": "^4.2.0",
     "bootstrap": "^5.3.8",
-    "html-react-parser": "^5.2.3"
+    "html-react-parser": "^5.2.3",
+    "minisearch": "^7.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

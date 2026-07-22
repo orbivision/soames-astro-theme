@@ -7,6 +7,7 @@ import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
+import DocsSearch from "@theme/components/DocsSearch";
 import Breadcrumbs from "@theme/components/Breadcrumbs";
 import { getDocs, buildDocTree, getDocsPage, docAncestors, resolveHeroBg } from "../../lib/wp";
 
@@ -85,6 +86,7 @@ const crumbs = [
       </div>
       <div class="col-12 col-lg-4">
         <section id="soames-gatsby-sidebar-container" class="soames-gatsby-sidebar">
+          <DocsSearch client:idle />
           <DocsSidebar tree={tree} currentId={doc.databaseId} />
         </section>
       </div>

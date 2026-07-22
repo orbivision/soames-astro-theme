@@ -5,6 +5,7 @@
 // menuOrder order). If no docs exist, getDocs() returns [] → empty state.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
+import DocsSearch from "@theme/components/DocsSearch";
 import { getDocs, getDocsPage, buildDocTree, resolveHeroBg, type WpDoc, type DocTreeNode } from "../../lib/wp";
 
 const docs = await getDocs();
@@ -43,6 +44,9 @@ const rows: WpDoc[][] = flat.reduce((groups: WpDoc[][], doc: WpDoc, i: number) =
   ) : (
     <section class="soames-blog-roll">
       <div class="container">
+        <div class="soames-docs-search-bar">
+          <DocsSearch client:idle />
+        </div>
         {rows.map((group) => (
           <div class="media-container-row">
             {group.map((doc) => (

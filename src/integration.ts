@@ -132,6 +132,9 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         // Documentation (weDocs). Optional — generates 0 doc pages when weDocs
         // isn't installed (getDocs() returns []); /docs/ then shows an empty state.
         injectRoute({ pattern: '/docs', entrypoint: 'soames-astro-theme/routes/docs/index.astro' });
+        // ORBI-50: static search index (before the [...slug] catch-all so the
+        // named endpoint wins). Feeds the client-side DocsSearch island.
+        injectRoute({ pattern: '/docs/search-index.json', entrypoint: 'soames-astro-theme/routes/docs/search-index.json.ts' });
         injectRoute({ pattern: '/docs/[...slug]', entrypoint: 'soames-astro-theme/routes/docs/[...slug].astro' });
 
         // When the blog moved off /blog/, redirect the old base path to it.

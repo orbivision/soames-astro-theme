@@ -1183,6 +1183,94 @@ section.lazy-placeholder:after {
   font-weight: 500;
 }
 
+/* ── Docs search (DocsSearch island — ORBI-50) ─────────────────────────────── */
+/* On the /docs landing, constrain and center the search above the card grid. */
+.soames-docs-search-bar {
+  max-width: 520px;
+  margin: 0 auto 2rem;
+}
+
+.soames-docs-search {
+  position: relative;
+  font-family: 'Rubik', sans-serif;
+  margin-bottom: 1.5rem;
+}
+
+.soames-docs-search-input {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.95rem;
+  color: #232323;
+  background: #fff;
+  border: 1px solid #e0ded8;
+  border-radius: 4px;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.soames-docs-search-input:focus {
+  outline: none;
+  border-color: #bc361b;
+  box-shadow: 0 0 0 2px rgba(188, 54, 27, 0.15);
+}
+
+.soames-docs-search-results {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e0ded8;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.soames-docs-search-result {
+  display: block;
+  padding: 0.6rem 0.85rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.soames-docs-search-result + .soames-docs-search-result {
+  border-top: 1px solid #f0eee9;
+}
+.soames-docs-search-result.is-active {
+  background: #faf7f2;
+  border-left-color: #bc361b;
+}
+
+.soames-docs-search-title {
+  display: block;
+  color: #232323;
+  font-weight: 500;
+}
+.soames-docs-search-result.is-active .soames-docs-search-title {
+  color: #bc361b;
+}
+.soames-docs-search-crumb {
+  display: block;
+  font-size: 0.75rem;
+  color: #8a8578;
+  margin-top: 0.1rem;
+}
+.soames-docs-search-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: #6b6659;
+  margin-top: 0.2rem;
+}
+.soames-docs-search-empty {
+  padding: 0.7rem 0.85rem;
+  color: #8a8578;
+  font-size: 0.85rem;
+}
+
 /* ── Article breadcrumbs (Breadcrumbs) ─────────────────────────────────────── */
 .soames-breadcrumbs-nav {
   font-family: 'Rubik', sans-serif;
