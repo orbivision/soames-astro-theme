@@ -5,6 +5,8 @@
 // Aliasing the root field (e.g. `wpPages: pages`) dodges the rule. GET also works.
 // This is a server-config quirk that affects ANY client (incl. Gatsby) equally.
 
+import { localizeUrl, localizeHtml } from "./localizeImages.js";
+
 const GRAPHQL_URL =
   import.meta.env.WORDPRESS_GRAPHQL_URL || "http://soames.orbivision.net/graphql";
 const BASE_URL =
@@ -113,7 +115,9 @@ function normalizeImage(node: any): WpImage | null {
   const n = node?.featuredImage?.node;
   if (!n?.sourceUrl) return null;
   return {
-    sourceUrl: n.sourceUrl,
+    // ORBI-51: localize the WP-hosted URL at the single normalization point so
+    // every featured-image consumer (hero, single-post <img>, cards) is covered.
+    sourceUrl: localizeUrl(n.sourceUrl) as string,
     altText: n.altText ?? "",
     width: n.mediaDetails?.width,
     height: n.mediaDetails?.height,
@@ -132,7 +136,9 @@ export async function getPages(): Promise<WpPage[]> {
     slug: n.slug ?? "",
     isPostsPage: !!n.isPostsPage,
     isFrontPage: !!n.isFrontPage,
-    content: n.content ?? "",
+    // ORBI-51: rewrite WP image URLs embedded in body HTML (inline <img>/srcset,
+    // block data-* attrs, inline url()) to local /wp-media/ paths.
+    content: localizeHtml(n.content ?? ""),
     excerpt: n.excerpt ?? "",
     // The plugin's WPGraphQL `overlayOpacity` field is typed String (e.g. "0.4"),
     // so parse it to a number; null (→ HeroHeader default 0.6) if absent/invalid.
@@ -140,7 +146,8 @@ export async function getPages(): Promise<WpPage[]> {
     // Dedicated hero background image URL (ORBI-41); the plugin resolves it to
     // null when unset. (Ships with the plugin that already provides overlayOpacity
     // above, so the query requires no older-plugin fallback beyond that.)
-    heroBackgroundImage: n.heroBackgroundImage ?? null,
+    // ORBI-51: localized so resolveHeroBg feeds a local /wp-media/ path to HeroHeader.
+    heroBackgroundImage: (localizeUrl(n.heroBackgroundImage ?? null) as string | null) ?? null,
     featuredImage: normalizeImage(n),
   }));
 }
@@ -223,7 +230,7 @@ export async function getPosts(): Promise<WpPost[]> {
       uri: n.uri,
       date: n.date,
       excerpt: n.excerpt ?? "",
-      content: n.content ?? "",
+      content: localizeHtml(n.content ?? ""), // ORBI-51
       featuredImage: normalizeImage(n),
       author: a
         ? {
@@ -253,7 +260,7 @@ export async function getDocs(): Promise<WpDoc[]> {
       title: n.title,
       slug: n.slug,
       uri: n.uri,
-      content: n.content ?? "",
+      content: localizeHtml(n.content ?? ""), // ORBI-51
       excerpt: n.excerpt ?? "",
       menuOrder: n.menuOrder ?? 0,
       parentDatabaseId: n.parentDatabaseId ?? 0,
@@ -390,5 +397,12 @@ export async function getSoamesSettings(): Promise<SoamesSettings> {
     headers: { "User-Agent": UA },
   });
   if (!res.ok) throw new Error(`Soames settings REST ${res.status}`);
-  return (await res.json()) as SoamesSettings;
+  const settings = (await res.json()) as SoamesSettings;
+  // ORBI-51: localize the logo + favicon (both WP-hosted) so the chrome on every
+  // page loads from Netlify, not WP. avatarUrl (Gravatar, non-WP) is left as-is.
+  return {
+    ...settings,
+    logoUrl: (localizeUrl(settings.logoUrl) as string | null) ?? null,
+    faviconUrl: (localizeUrl(settings.faviconUrl) as string | null) ?? null,
+  };
 }

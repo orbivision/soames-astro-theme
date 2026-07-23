@@ -4,6 +4,8 @@ import react from '@astrojs/react';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { themeShadow } from './theme-shadow.js';
+import { configureLocalizer } from './lib/localizeImages.js';
+import { downloadImages } from './lib/localizeDownload.js';
 
 // html-react-parser is CommonJS and pulls a CJS subtree; these must be bundled
 // (noExternal) AND pre-bundled (optimizeDeps) so React dedupes to one copy and
@@ -88,8 +90,13 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
   const theme: AstroIntegration = {
     name: 'soames-astro-theme',
     hooks: {
-      'astro:config:setup': async ({ config, updateConfig, injectRoute }) => {
+      'astro:config:setup': async ({ command, config, updateConfig, injectRoute }) => {
         const overrideDir = path.join(fileURLToPath(config.srcDir), 'overrides');
+
+        // ORBI-51: enable image localization on `astro build` only. In `astro dev`
+        // it's a no-op (WP URLs pass through) so editors keep seeing live WP edits
+        // on refresh without a download step. Hosts = the authorized WP image host.
+        configureLocalizer({ enabled: command === 'build', hosts: imageDomains });
 
         updateConfig({
           image: { domains: imageDomains },
@@ -141,6 +148,11 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         if (postsSlug !== 'blog') {
           updateConfig({ redirects: { '/blog': `/${postsSlug}` } });
         }
+      },
+      // ORBI-51: after the static build renders (registry now populated by the
+      // rewrite pass in lib/wp), download every WP image into dist/wp-media/.
+      'astro:build:done': async ({ dir, logger }) => {
+        await downloadImages(fileURLToPath(dir), WP_UA, logger);
       },
     },
   };
