@@ -47,6 +47,12 @@ export interface WpPage {
   isFrontPage: boolean;
   content: string;
   excerpt: string;
+  // Dedicated hero title/caption from the plugin (ORBI-52), null when unset. The
+  // title falls back to `title`; the caption has NO fallback — see
+  // resolveHeroTitle / resolveHeroCaption. `title`/`excerpt` stay reserved for the
+  // browser title, meta description, cards and search.
+  heroTitle: string | null;
+  heroCaption: string | null;
   overlayOpacity: number | null;
   // Dedicated hero background image URL from the plugin (ORBI-41). Takes priority
   // over featuredImage for the hero backdrop; null when unset. See resolveHeroBg.
@@ -111,6 +117,26 @@ export function resolveHeroBg(
   return page?.heroBackgroundImage ?? page?.featuredImage?.sourceUrl ?? null;
 }
 
+// Resolve the hero title (ORBI-52): the dedicated hero-title setting wins, then
+// the page/post title (backwards compatibility with the pre-ORBI-52 behaviour),
+// then the caller's template default ("Blog", "Documentation"). The fallback lives
+// here, not in the plugin resolver, so every consumer shares one rule.
+export function resolveHeroTitle(
+  page: { heroTitle?: string | null; title?: string | null } | null | undefined,
+  fallback = ""
+): string {
+  return page?.heroTitle || page?.title || fallback;
+}
+
+// Resolve the hero caption (ORBI-52): the dedicated setting ONLY. Deliberately no
+// excerpt fallback — an unset caption returns null and HeroHeader then omits the
+// subtitle element entirely rather than rendering it empty.
+export function resolveHeroCaption(
+  page: { heroCaption?: string | null } | null | undefined
+): string | null {
+  return page?.heroCaption || null;
+}
+
 function normalizeImage(node: any): WpImage | null {
   const n = node?.featuredImage?.node;
   if (!n?.sourceUrl) return null;
@@ -127,7 +153,7 @@ function normalizeImage(node: any): WpImage | null {
 export async function getPages(): Promise<WpPage[]> {
   // NOTE the alias `wpPages:` — required to pass Wordfence.
   const data = await wpQuery<{ wpPages: { nodes: any[] } }>(
-    `{ wpPages: pages(first: 100) { nodes { databaseId title uri slug isPostsPage isFrontPage content excerpt overlayOpacity heroBackgroundImage ${IMAGE_FRAGMENT} } } }`
+    `{ wpPages: pages(first: 100) { nodes { databaseId title uri slug isPostsPage isFrontPage content excerpt heroTitle heroCaption overlayOpacity heroBackgroundImage ${IMAGE_FRAGMENT} } } }`
   );
   return data.wpPages.nodes.map((n) => ({
     databaseId: n.databaseId,
@@ -140,6 +166,11 @@ export async function getPages(): Promise<WpPage[]> {
     // block data-* attrs, inline url()) to local /wp-media/ paths.
     content: localizeHtml(n.content ?? ""),
     excerpt: n.excerpt ?? "",
+    // Dedicated hero title/caption (ORBI-52). Coerce "" → null so the resolvers'
+    // fallback logic has a single "unset" value. The caption is HTML, so it goes
+    // through localizeHtml (ORBI-51) in case it links to a WP-hosted asset.
+    heroTitle: n.heroTitle || null,
+    heroCaption: localizeHtml(n.heroCaption ?? "") || null,
     // The plugin's WPGraphQL `overlayOpacity` field is typed String (e.g. "0.4"),
     // so parse it to a number; null (→ HeroHeader default 0.6) if absent/invalid.
     overlayOpacity: parseOverlayOpacity(n.overlayOpacity),
@@ -160,6 +191,8 @@ export interface WpPostsPage {
   databaseId: number;
   slug: string;
   title: string;
+  heroTitle: string | null;
+  heroCaption: string | null;
   heroBackgroundImage: string | null;
   featuredImage: WpImage | null;
   overlayOpacity: number | null;
@@ -171,6 +204,8 @@ export async function getPostsPage(): Promise<WpPostsPage | null> {
     databaseId: pp.databaseId,
     slug: pp.slug,
     title: pp.title,
+    heroTitle: pp.heroTitle,
+    heroCaption: pp.heroCaption,
     heroBackgroundImage: pp.heroBackgroundImage,
     featuredImage: pp.featuredImage,
     overlayOpacity: pp.overlayOpacity,
@@ -188,6 +223,8 @@ export interface WpDocsPage {
   databaseId: number;
   title: string;
   excerpt: string;
+  heroTitle: string | null;
+  heroCaption: string | null;
   heroBackgroundImage: string | null;
   featuredImage: WpImage | null;
   overlayOpacity: number | null;
@@ -203,6 +240,8 @@ export async function getDocsPage(): Promise<WpDocsPage | null> {
       databaseId: dp.databaseId,
       title: dp.title,
       excerpt: dp.excerpt,
+      heroTitle: dp.heroTitle,
+      heroCaption: dp.heroCaption,
       heroBackgroundImage: dp.heroBackgroundImage,
       featuredImage: dp.featuredImage,
       overlayOpacity: dp.overlayOpacity,

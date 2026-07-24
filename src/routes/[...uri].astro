@@ -1,12 +1,15 @@
 ---
 // All WordPress Pages (except the front page, served by index.astro).
-// Mirrors the Gatsby page template: HeroHeader (featured image as parallax bg,
-// excerpt as subhead) + content wrapped in the .soames-gatsby-content container.
+// Mirrors the Gatsby page template: HeroHeader + content wrapped in the
+// .soames-gatsby-content container. ORBI-52: the hero title/caption come from the
+// dedicated WP hero fields (title falling back to the page title, caption showing
+// nothing when unset); page.title/page.excerpt drive only the browser title and
+// meta description now.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
-import { getPages, resolveHeroBg } from "../lib/wp";
+import { getPages, resolveHeroBg, resolveHeroTitle, resolveHeroCaption } from "../lib/wp";
 
 export async function getStaticPaths() {
   const pages = await getPages();
@@ -39,8 +42,8 @@ if (import.meta.env.DEV) {
 ---
 <Base pageTitle={page.title} description={page.excerpt}>
   <HeroHeader
-    title={page.title}
-    subhead={page.excerpt}
+    title={resolveHeroTitle(page)}
+    subhead={resolveHeroCaption(page)}
     backgroundImage={resolveHeroBg(page)}
     overlayOpacity={page.overlayOpacity}
   />
