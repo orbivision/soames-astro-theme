@@ -9,7 +9,15 @@ import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
 import DocsSearch from "@theme/components/DocsSearch";
 import Breadcrumbs from "@theme/components/Breadcrumbs";
-import { getDocs, buildDocTree, getDocsPage, docAncestors, resolveHeroBg } from "../../lib/wp";
+import {
+  getDocs,
+  buildDocTree,
+  getDocsPage,
+  docAncestors,
+  resolveHeroBg,
+  resolveHeroTitle,
+  resolveHeroCaption,
+} from "../../lib/wp";
 
 export async function getStaticPaths() {
   // Derive the [...slug] param from the doc's WP uri (e.g. /docs/getting-started/
@@ -21,23 +29,27 @@ export async function getStaticPaths() {
 
   const docs = await getDocs();
   const tree = buildDocTree(docs);
-  // Single docs inherit the /docs/ page hero — title, background image, overlay —
-  // falling back to "Documentation" / placeholder when none is set. Fetched once
-  // here and shared across all paths (one WP round-trip).
+  // Single docs inherit the /docs/ page hero — title, caption, background image,
+  // overlay — falling back to "Documentation" / placeholder when none is set.
+  // Fetched once here and shared across all paths (one WP round-trip).
   const docsPage = await getDocsPage();
-  const heroTitle = docsPage?.title ?? "Documentation";
+  const heroTitle = resolveHeroTitle(docsPage, "Documentation");
+  const heroCaption = resolveHeroCaption(docsPage);
   const heroBg = resolveHeroBg(docsPage);
   const heroOverlay = docsPage?.overlayOpacity ?? null;
+  // The breadcrumb crumb for /docs/ keeps the docs page's REAL title — it labels a
+  // destination, so it must not follow a custom hero title (ORBI-52).
+  const docsLabel = docsPage?.title ?? "Documentation";
   return docs
     .map((doc) => ({ doc, slug: toSlug(doc.uri) }))
     .filter(({ slug }) => slug.length > 0)
     .map(({ doc, slug }) => ({
       params: { slug },
-      props: { doc, docs, tree, heroTitle, heroBg, heroOverlay },
+      props: { doc, docs, tree, heroTitle, heroCaption, heroBg, heroOverlay, docsLabel },
     }));
 }
 
-let { doc, docs, tree, heroTitle, heroBg, heroOverlay } = Astro.props;
+let { doc, docs, tree, heroTitle, heroCaption, heroBg, heroOverlay, docsLabel } = Astro.props;
 
 // Dev only: re-fetch on each request so WP doc edits show on refresh without
 // restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
@@ -51,22 +63,24 @@ if (import.meta.env.DEV) {
     tree = buildDocTree(docs);
   }
   const dp = await getDocsPage();
-  heroTitle = dp?.title ?? "Documentation";
+  heroTitle = resolveHeroTitle(dp, "Documentation");
+  heroCaption = resolveHeroCaption(dp);
   heroBg = resolveHeroBg(dp);
   heroOverlay = dp?.overlayOpacity ?? null;
+  docsLabel = dp?.title ?? "Documentation";
 }
 
 // Breadcrumb trail: Home › <docs landing> › <ancestors…> › current (plain text).
 // Ancestors come from the parentDatabaseId chain (data, not the URI).
 const crumbs = [
   { label: "Home", href: "/" },
-  { label: heroTitle, href: "/docs/" },
+  { label: docsLabel, href: "/docs/" },
   ...docAncestors(docs, doc.databaseId).map((a) => ({ label: a.title, href: a.uri })),
   { label: doc.title },
 ];
 ---
 <Base pageTitle={doc.title} description={doc.excerpt}>
-  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
+  <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
       <div class="col-12 col-lg-8">

@@ -3,10 +3,19 @@
 // HeroHeader + posts as cards grouped 3-per-row + Read More + pagination.
 // Lives at the slug of the WP "Posts page" (Settings > Reading), or /blog/ if
 // none is assigned — the base path is set by the route injected in integration.ts.
-// Hero (title/featured image/overlay) comes from that Posts page when present.
+// Hero (title/caption/background/overlay) comes from that Posts page when present;
+// ORBI-52: from its dedicated hero fields, falling back to its title.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
-import { getPosts, getPostsPerPage, getPostsPage, resolveHeroBg, type WpPost } from "../../lib/wp";
+import {
+  getPosts,
+  getPostsPerPage,
+  getPostsPage,
+  resolveHeroBg,
+  resolveHeroTitle,
+  resolveHeroCaption,
+  type WpPost,
+} from "../../lib/wp";
 import { formatPostDate } from "../../lib/date";
 
 export async function getStaticPaths() {
@@ -29,16 +38,30 @@ export async function getStaticPaths() {
         totalPages,
         prevPath: pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null,
         nextPath: pageNum < totalPages ? `${base}/${pageNum + 1}/` : null,
-        heroTitle: postsPage?.title || "Blog",
+        heroTitle: resolveHeroTitle(postsPage, "Blog"),
+        heroCaption: resolveHeroCaption(postsPage),
         heroBg: resolveHeroBg(postsPage),
         heroOverlay: postsPage?.overlayOpacity ?? 0.6,
+        // The browser/SEO title keeps the Posts page's REAL title — it must not
+        // follow a custom hero title (ORBI-52).
+        pageTitle: postsPage?.title || "Blog",
       },
     };
   });
 }
 
-let { posts, pageNum, totalPages, prevPath, nextPath, heroTitle, heroBg, heroOverlay } =
-  Astro.props;
+let {
+  posts,
+  pageNum,
+  totalPages,
+  prevPath,
+  nextPath,
+  heroTitle,
+  heroCaption,
+  heroBg,
+  heroOverlay,
+  pageTitle,
+} = Astro.props;
 
 // Dev only: refresh this archive page's data on each request (getStaticPaths is
 // cached for the life of `astro dev`, so WP edits wouldn't show until a restart).
@@ -55,9 +78,11 @@ if (import.meta.env.DEV) {
   posts = all.slice((pageNum - 1) * perPage, pageNum * perPage);
   prevPath = pageNum > 1 ? (pageNum === 2 ? `${base}/` : `${base}/${pageNum - 1}/`) : null;
   nextPath = pageNum < totalPages ? `${base}/${pageNum + 1}/` : null;
-  heroTitle = postsPage?.title || "Blog";
+  heroTitle = resolveHeroTitle(postsPage, "Blog");
+  heroCaption = resolveHeroCaption(postsPage);
   heroBg = resolveHeroBg(postsPage);
   heroOverlay = postsPage?.overlayOpacity ?? 0.6;
+  pageTitle = postsPage?.title || "Blog";
 }
 
 // Group posts 3-per-row (parity with the Gatsby blog roll).
@@ -67,8 +92,8 @@ const rows: WpPost[][] = posts.reduce((groups: WpPost[][], post: WpPost, i: numb
   return groups;
 }, []);
 ---
-<Base pageTitle={`${heroTitle}${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
-  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
+<Base pageTitle={`${pageTitle}${pageNum > 1 ? ` — page ${pageNum}` : ""}`} isHomePage={true}>
+  <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
 
   {posts.length === 0 ? (
     <p>No blog posts found. Add posts to your WordPress site and they'll appear here!</p>

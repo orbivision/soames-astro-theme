@@ -6,7 +6,16 @@
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import DocsSearch from "@theme/components/DocsSearch";
-import { getDocs, getDocsPage, buildDocTree, resolveHeroBg, type WpDoc, type DocTreeNode } from "../../lib/wp";
+import {
+  getDocs,
+  getDocsPage,
+  buildDocTree,
+  resolveHeroBg,
+  resolveHeroTitle,
+  resolveHeroCaption,
+  type WpDoc,
+  type DocTreeNode,
+} from "../../lib/wp";
 
 const docs = await getDocs();
 // Hero is driven by the WP page chosen in Soames Settings → Documentation page,
@@ -31,8 +40,8 @@ const rows: WpDoc[][] = flat.reduce((groups: WpDoc[][], doc: WpDoc, i: number) =
 ---
 <Base pageTitle={docsPage?.title ?? "Documentation"} description={docsPage?.excerpt || "Documentation and guides."}>
   <HeroHeader
-    title={docsPage?.title ?? "Documentation"}
-    subhead={docsPage?.excerpt ?? ""}
+    title={resolveHeroTitle(docsPage, "Documentation")}
+    subhead={resolveHeroCaption(docsPage)}
     backgroundImage={resolveHeroBg(docsPage)}
     overlayOpacity={docsPage?.overlayOpacity ?? 0.6}
   />

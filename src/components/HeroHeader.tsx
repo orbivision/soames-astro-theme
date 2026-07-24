@@ -1,6 +1,10 @@
 // PORTED from soames-gatsby-theme HeroHeader.tsx. Change for Astro: title/subhead
 // come in as HTML strings and are run through html-react-parser here (the Gatsby
 // page template parsed them before passing). Parallax/overlay markup UNCHANGED.
+//
+// ORBI-52: callers now source `title`/`subhead` from the dedicated WP hero fields
+// via resolveHeroTitle()/resolveHeroCaption(), not from the page title/excerpt.
+// `subhead` is optional in the real sense now — most heroes won't have one.
 import React from "react";
 import parse from "html-react-parser";
 
@@ -52,9 +56,14 @@ const HeroHeader: React.FC<HeroHeaderProps> = ({
               <h1 className="soames-section-title align-center soames-bold mbr-fonts-style display-1">
                 {parse(title || "")}
               </h1>
-              <div className="soames-section-subtitle align-center soames-light soames-white mbr-fonts-style display-5">
-                {subhead ? parse(subhead) : ""}
-              </div>
+              {/* ORBI-52: the caption comes from a dedicated WP field with no
+                  fallback, so an unset caption omits this element entirely rather
+                  than rendering it empty. */}
+              {subhead ? (
+                <div className="soames-section-subtitle align-center soames-light soames-white mbr-fonts-style display-5">
+                  {parse(subhead)}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

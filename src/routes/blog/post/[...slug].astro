@@ -8,16 +8,23 @@ import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import Bio from "@theme/components/Bio";
 import BlogSidebar from "@theme/components/BlogSidebar";
-import { getPosts, getPostsPage, resolveHeroBg } from "../../../lib/wp";
+import {
+  getPosts,
+  getPostsPage,
+  resolveHeroBg,
+  resolveHeroTitle,
+  resolveHeroCaption,
+} from "../../../lib/wp";
 import { formatPostDate } from "../../../lib/date";
 
 export async function getStaticPaths() {
   const posts = await getPosts();
-  // Single posts inherit the posts page (blog roll) hero — title, background
-  // image, overlay — falling back to "Blog" / placeholder when none is set.
-  // Fetched once here and shared across all paths (one WP round-trip).
+  // Single posts inherit the posts page (blog roll) hero — title, caption,
+  // background image, overlay — falling back to "Blog" / placeholder when none is
+  // set. Fetched once here and shared across all paths (one WP round-trip).
   const postsPage = await getPostsPage();
-  const heroTitle = postsPage?.title ?? "Blog";
+  const heroTitle = resolveHeroTitle(postsPage, "Blog");
+  const heroCaption = resolveHeroCaption(postsPage);
   const heroBg = resolveHeroBg(postsPage);
   const heroOverlay = postsPage?.overlayOpacity ?? null;
   return posts.map((post, i) => ({
@@ -28,13 +35,14 @@ export async function getStaticPaths() {
       previous: posts[i + 1] ?? null, // posts are date DESC → next index is older
       next: posts[i - 1] ?? null,
       heroTitle,
+      heroCaption,
       heroBg,
       heroOverlay,
     },
   }));
 }
 
-let { post, posts, previous, next, heroTitle, heroBg, heroOverlay } = Astro.props;
+let { post, posts, previous, next, heroTitle, heroCaption, heroBg, heroOverlay } = Astro.props;
 
 // Dev only: re-fetch on each request so WP edits show on refresh without
 // restarting `astro dev` (getStaticPaths props are cached otherwise). Stripped
@@ -49,7 +57,8 @@ if (import.meta.env.DEV) {
     next = all[i - 1] ?? null;
   }
   const pp = await getPostsPage();
-  heroTitle = pp?.title ?? "Blog";
+  heroTitle = resolveHeroTitle(pp, "Blog");
+  heroCaption = resolveHeroCaption(pp);
   heroBg = resolveHeroBg(pp);
   heroOverlay = pp?.overlayOpacity ?? null;
 }
@@ -57,7 +66,7 @@ if (import.meta.env.DEV) {
 const img = post.featuredImage;
 ---
 <Base pageTitle={post.title} description={post.excerpt}>
-  <HeroHeader title={heroTitle} subhead="" backgroundImage={heroBg} overlayOpacity={heroOverlay} />
+  <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
       <div class="col-12 col-lg-8">
