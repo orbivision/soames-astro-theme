@@ -1,6 +1,11 @@
 // PORTED from soames-gatsby-theme Bio.tsx. Change for Astro: author comes in as a
 // prop (from the post's author node) instead of useStaticQuery(wpUser) — the
-// standalone users query is auth/WAF-gated. Uses firstName, falling back to name.
+// standalone users query is auth/WAF-gated.
+//
+// ORBI-53: shows the author's display name (WPGraphQL's `name` IS WP_User->display_name),
+// falling back to firstName. Previously preferred firstName. The "You should follow them
+// on Twitter" link was dropped in the same pass — it built twitter.com/<display name>,
+// spaces included, so it was never a working URL.
 import React from "react";
 import type { WpAuthor } from "../lib/wp";
 
@@ -10,8 +15,7 @@ interface BioProps {
 
 const Bio: React.FC<BioProps> = ({ author }) => {
   if (!author) return null;
-  const displayName = author.firstName || author.name;
-  const twitterHandle = author.name;
+  const displayName = author.name || author.firstName;
 
   return (
     <div className="bio">
@@ -21,12 +25,7 @@ const Bio: React.FC<BioProps> = ({ author }) => {
       {displayName && (
         <p>
           Written by <strong>{displayName}</strong>
-          {author.description ? ` ${author.description}` : ""}{" "}
-          {twitterHandle && (
-            <a href={`https://twitter.com/${twitterHandle}`}>
-              You should follow them on Twitter
-            </a>
-          )}
+          {author.description ? ` ${author.description}` : ""}
         </p>
       )}
     </div>
