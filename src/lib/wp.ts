@@ -276,7 +276,11 @@ export async function getPosts(): Promise<WpPost[]> {
             firstName: a.firstName ?? null,
             name: a.name ?? null,
             description: a.description ?? null,
-            avatarUrl: a.avatar?.url ?? null,
+            // ORBI-53: the plugin's local profile picture (pre_get_avatar_data) makes
+            // this a WP-hosted upload, so localize it like any other WP image (ORBI-51)
+            // and serve it from Netlify. localizeUrl is host- and extension-gated, so a
+            // Gravatar URL — different host, no image extension — passes through as-is.
+            avatarUrl: (localizeUrl(a.avatar?.url ?? null) as string | null) ?? null,
           }
         : null,
     };
