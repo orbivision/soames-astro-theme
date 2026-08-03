@@ -15,6 +15,7 @@ import SoamesGalleryMenu from "./SoamesGalleryMenu";
 import SoamesVideo from "./SoamesVideo";
 import SoamesTextList from "./SoamesTextList";
 import SoamesSoundCloud from "./SoamesSoundCloud";
+import SoamesCoreBlock from "./SoamesCoreBlock";
 
 interface ShortcodesProps {
   // Astro passes slotted children as rendered nodes, not a raw string, so the
@@ -320,8 +321,63 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
     }
   }
 
+  // --- Built-in WordPress blocks: constrain and re-typeset (ORBI-59) ---
+  //
+  // LAST on purpose. Everything above has had its chance to claim this node, so whatever
+  // reaches here is a block the transform has no specific mapping for: lists, tables,
+  // buttons, images, quotes, groups, separators, embeds. Those used to pass straight through
+  // as raw HTML into `.soames-gatsby-content`, which sets padding but no max-width — so they
+  // ran the full width of the viewport while the surrounding text sat in a Bootstrap
+  // container, at the browser's default 1rem rather than the Soames 1.2rem body size.
+  if (!proseMode && shouldWrapCoreBlock(node)) {
+    // Re-render the node ITSELF (not just its children) so the block's own element and
+    // classes survive — `.wp-block-table`'s <figure> still needs them to be styled.
+    //
+    // The inner replace has to short-circuit on `node`, or this recurses forever: the node's
+    // parent is still null on the way back through, so shouldWrapCoreBlock would match it
+    // again and wrap again. Returning undefined for it means "render this element as-is",
+    // and its children are then walked with these same options — by which point they DO have
+    // a parent, so they can't be wrapped either.
+    return (
+      <SoamesCoreBlock>
+        {domToReact([node], {
+          replace: (inner) => (inner === node ? undefined : handleShortcodes(inner)),
+        })}
+      </SoamesCoreBlock>
+    );
+  }
+
   return undefined;
 };
+
+// Elements that must never be given a layout container, either because they aren't visible
+// content or because wrapping them would break what they do.
+const NEVER_WRAP_TAGS = new Set(["style", "script", "template", "noscript", "link", "meta"]);
+
+/**
+ * Whether this node is an unhandled built-in block that needs the Soames content container.
+ *
+ * TOP-LEVEL ONLY, and that restriction is the whole trick. `replace` runs for every node the
+ * parser walks, including the children we hand back to domToReact — so without this a
+ * `wp-block-buttons` would be wrapped, then its inner `wp-block-button` wrapped again, and so
+ * on down. Nodes parsed at the top level of the WP content have no parent; anything reached
+ * through recursion does. Since the wrapper re-parses the node itself, this check is also
+ * what stops that call recursing infinitely.
+ */
+function shouldWrapCoreBlock(node: DOMNode): boolean {
+  if (node.type !== "tag") return false;
+  const el = node as DomElement;
+  if (el.parent) return false; // nested — its top-level ancestor already got wrapped
+  if (NEVER_WRAP_TAGS.has(el.name)) return false;
+
+  const classes = (el.attribs?.class ?? "").split(" ");
+  // Soames blocks are full-width sections by design and bring their own containers.
+  if (classes.some((c) => c.startsWith("wp-block-soames-"))) return false;
+  // Honour WordPress's own opt-out: alignfull/alignwide mean "break out of the column".
+  if (classes.includes("alignfull") || classes.includes("alignwide")) return false;
+
+  return true;
+}
 
 const Shortcodes: React.FC<ShortcodesProps> = ({ html, prose = false }) => {
   proseMode = !!prose;
