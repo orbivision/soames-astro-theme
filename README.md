@@ -13,6 +13,14 @@
 Shared **Astro** theme for the Soames ecosystem — WordPress as a headless CMS,
 static output, React islands. Successor to `soames-gatsby-theme` (see ORBI-23/24/25).
 
+## Quick start
+
+Starting a new site? Don't wire this up by hand — use
+**[`soames-astro-starter`](https://github.com/orbivision/soames-astro-starter)** and click
+*Use this template*. It's this theme already configured, and nothing else.
+
+The instructions below are for adding the theme to an Astro project you already have.
+
 ## Install
 
 ```
