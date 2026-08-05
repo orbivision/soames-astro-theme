@@ -396,15 +396,34 @@ export interface MenuItem extends MenuChild {
 
 // Returns top-level items (with their children) for a registered menu location
 // e.g. "HEADER" / "FOOTER". `menus` is not WAF-blocked, so no aliasing needed.
+//
+// ORBI-62: filter by location in the QUERY rather than fetching every menu and
+// matching on a `locations` field. That field was a build-breaker: WPGraphQL
+// resolves it by walking the `nav_menu_locations` theme mod and mapping each key
+// to a MenuLocationEnum value, so a single assignment to a location the active
+// theme no longer registers (a stale key left by a retired theme — invisible in
+// Appearance → Menus, which only lists *registered* locations) resolves to null
+// and emits "Internal server error". WPGraphQL still returns the usable data
+// beside it, but `wpQuery` throws on any `errors`, so one orphaned theme-mod key
+// took down the whole build. Nothing here ever needed the field for its own sake —
+// it was only ever used to pick the right menu, which the server does better.
+function menuLocationEnum(location: string): string {
+  // Interpolated into the query as a GraphQL enum (bare identifier, not a string),
+  // so it must never carry anything but enum-safe characters.
+  if (!/^[A-Z][A-Z0-9_]*$/.test(location)) {
+    throw new Error(`Invalid menu location "${location}" — expected a MenuLocationEnum value.`);
+  }
+  return location;
+}
+
 export async function getMenuByLocation(location: string): Promise<MenuItem[]> {
   const data = await wpQuery<{ menus: { nodes: any[] } }>(
-    `{ menus(first: 20) { nodes { locations menuItems(first: 100) { nodes {
+    `{ menus(where: {location: ${menuLocationEnum(location)}}, first: 1) { nodes { menuItems(first: 100) { nodes {
         id label path uri parentDatabaseId order
         childItems { nodes { id label uri order } }
       } } } } }`
   );
-  const menu = data.menus.nodes.find((m) => (m.locations ?? []).includes(location));
-  const nodes: any[] = menu?.menuItems?.nodes ?? [];
+  const nodes: any[] = data.menus?.nodes?.[0]?.menuItems?.nodes ?? [];
   return nodes
     .filter((n) => n.parentDatabaseId === 0)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
