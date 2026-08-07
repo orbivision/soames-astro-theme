@@ -8,6 +8,7 @@ import RemoveContentAreaPadding from "./RemoveContentAreaPadding";
 import SoamesTitle from "./SoamesTitle";
 import SoamesTitleBar from "./SoamesTitleBar";
 import SoamesTitleBarLg from "./SoamesTitleBarLg";
+import SoamesIconHeader from "./SoamesIconHeader";
 import SoamesTextBlock from "./SoamesTextBlock";
 import SoamesIconList from "./SoamesIconList";
 import SoamesFeature from "./SoamesFeature";
@@ -86,6 +87,19 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
             subtitle: [attrs["data-subtitle"] ?? ""],
             background: [attrs["data-background"] ?? ""],
           }}
+        />
+      );
+    }
+
+    // ORBI-63: full-width gray header band (icon + title/subtitle/meta).
+    if (classes.includes("wp-block-soames-icon-header")) {
+      const attrs = (node as DomElement).attribs;
+      return (
+        <SoamesIconHeader
+          image={attrs["data-image"] ?? ""}
+          title={attrs["data-title"] ?? ""}
+          subtitle={attrs["data-subtitle"] ?? ""}
+          meta={attrs["data-meta"] ?? ""}
         />
       );
     }
