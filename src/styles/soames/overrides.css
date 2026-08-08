@@ -1888,6 +1888,30 @@ section.lazy-placeholder:after {
   background-color: #eee;
 }
 
+/* ORBI-63: heading spacing inside the Icon Header.
+   `vendor/wordpress-blocks.css` sets a GLOBAL `h1..h6 { margin-top: 3rem;
+   margin-bottom: 1.5rem }`, which stacks 48px between each line and pushes the three
+   lines far apart. The hand-written markup this block replaces never showed that,
+   because each section carried a `.contentN` class whose site-level rules zeroed the
+   heading margins. Dropping `.contentN` (it was a mobirise-era anchor) meant dropping
+   that suppression too, so the block has to state the spacing itself — measured off
+   the legacy rendering, which is why h3 and h5 carry these particular few pixels.
+   The 48px/24px above the title comes from `pt-5 pb-4` in the markup, and matches. */
+.soames-section-subhead .title h2,
+.soames-section-subhead .title h3,
+.soames-section-subhead .title h5 {
+  margin: 0;
+}
+
+.soames-section-subhead .title h3 {
+  padding-top: 2px;
+}
+
+.soames-section-subhead .title h5 {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
 .soames-list {
   padding-top: 0px;
   padding-bottom: 45px;
