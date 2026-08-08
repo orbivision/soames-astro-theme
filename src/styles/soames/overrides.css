@@ -950,6 +950,19 @@ section.lazy-placeholder:after {
   background-color: white;
 }
 
+/* ORBI-63: cap the icon. Nothing else in the cascade constrains image size —
+   Bootstrap 5's reboot is only `vertical-align`, and this theme has no global `img`
+   rule — so the icon rendered at its intrinsic size and a 500x500 logo filled the
+   tile. 116px matches the Icon List's "small" default (ORBI-49), so this is the size
+   an icon already means elsewhere in Soames. Chosen to sit ABOVE the 80x80 logos the
+   hand-written resume sections use, which are therefore untouched. Applies to the
+   Icon Header block and to that legacy raw-HTML markup alike, since both carry the
+   class. */
+.media-wrap-icon img {
+  max-width: 116px;
+  height: auto;
+}
+
 .video-block {
   margin: auto;
 }
