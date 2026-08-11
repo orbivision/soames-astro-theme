@@ -2044,6 +2044,20 @@ section.lazy-placeholder:after {
   background-color: #efefef;
 }
 
+/* ORBI-64: keep the sidebar's blog image inside its column.
+   Nothing else in the cascade constrains it: Bootstrap 5's reboot is only
+   `img,svg{vertical-align:middle}` (the `max-width:100%` Bootstrap 4 applied broadly
+   now lives on the opt-in `.img-fluid`), and styles/soames has no global `img` rule.
+   So a 1600px-wide WP upload laid out at full intrinsic size in a ~440px column and
+   ran clean off the right edge of the page.
+   Scoped to the sidebar deliberately — a theme-wide `img { max-width:100% }` would
+   fight the navbar logo, the gallery tiles, and Icon List, which all set explicit
+   dimensions (Icon List's data-size sets an inline height). */
+.soames-gatsby-sidebar img {
+  max-width: 100%;
+  height: auto;
+}
+
 /* ── Prose content (docs; blog bodies later) ──────────────────────────────────
    Plain, left-aligned article prose — the counterpart to the centered, padded
    marketing transform the shortcode parser applies elsewhere. Everything is

@@ -74,6 +74,11 @@ export interface WpPost {
   excerpt: string;
   content: string;
   featuredImage: WpImage | null;
+  // ORBI-64: dedicated sidebar image (plugin `blogImage`), a bare URL with no
+  // intrinsic dimensions — the single-post template renders it as a plain <img>
+  // sized by CSS. null when unset, and there is deliberately NO featuredImage
+  // fallback: the featured image is reserved for hero backgrounds now.
+  blogImage: string | null;
   author: WpAuthor | null;
 }
 
@@ -257,7 +262,7 @@ export async function getDocsPage(): Promise<WpDocsPage | null> {
 
 export async function getPosts(): Promise<WpPost[]> {
   const data = await wpQuery<{ wpPosts: { nodes: any[] } }>(
-    `{ wpPosts: posts(first: 100) { nodes { databaseId title slug uri date excerpt content ${IMAGE_FRAGMENT}
+    `{ wpPosts: posts(first: 100) { nodes { databaseId title slug uri date excerpt content blogImage ${IMAGE_FRAGMENT}
         author { node { firstName name description avatar { url } } } } } }`
   );
   return data.wpPosts.nodes.map((n) => {
@@ -271,6 +276,10 @@ export async function getPosts(): Promise<WpPost[]> {
       excerpt: n.excerpt ?? "",
       content: localizeHtml(n.content ?? ""), // ORBI-51
       featuredImage: normalizeImage(n),
+      // ORBI-64: localize like every other WP-hosted image (ORBI-51). Skipping the
+      // localizer here would quietly reintroduce a runtime dependency on WordPress
+      // for the image at the top of every post's sidebar.
+      blogImage: (localizeUrl(n.blogImage ?? null) as string | null) ?? null,
       author: a
         ? {
             firstName: a.firstName ?? null,

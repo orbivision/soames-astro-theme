@@ -1,8 +1,7 @@
 ---
 // Single blog post (parity with blog-post.tsx): HeroHeader + two columns —
 // content (article: title, date, body, Bio, prev/next) and a sidebar
-// (featured image + Recent Posts via BlogSidebar). Content via the shortcode parser.
-import { Image } from "astro:assets";
+// (blog image + Recent Posts via BlogSidebar). Content via the shortcode parser.
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
@@ -63,7 +62,19 @@ if (import.meta.env.DEV) {
   heroOverlay = pp?.overlayOpacity ?? null;
 }
 
-const img = post.featuredImage;
+// ORBI-64: the sidebar image is now the post's dedicated `blogImage`, NOT its
+// featured image — that one is reserved for hero backgrounds. No fallback by
+// design: unset means the sidebar renders no image at all.
+//
+// Rendered as a plain <img>, not astro:assets <Image>: blogImage is a bare URL with
+// no intrinsic width/height, which <Image> requires for a remote source — and it was
+// those very width/height attributes that made the old featured image lay out at full
+// intrinsic size (1600px in a ~440px column) and run off the page. Sized by CSS
+// instead (`.soames-gatsby-sidebar img` in styles/soames/overrides.css). The lost
+// astro:assets processing is a non-loss: the emitted srcset pointed both widths at the
+// same unresized file. alt="" is deliberate — the field carries no alt text, and this
+// image is decorative, so marking it presentational beats inventing a description.
+const blogImage = post.blogImage;
 ---
 <Base pageTitle={post.title} description={post.excerpt}>
   <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
@@ -96,16 +107,8 @@ const img = post.featuredImage;
       </div>
       <div class="col-12 col-lg-4">
         <section id="soames-gatsby-sidebar-container" class="soames-gatsby-sidebar">
-          {img && img.width && img.height && (
-            <Image
-              src={img.sourceUrl}
-              alt={img.altText}
-              width={img.width}
-              height={img.height}
-              widths={[400, 800]}
-              sizes="(max-width: 1000px) 100vw, 33vw"
-              style="margin-bottom:50px"
-            />
+          {blogImage && (
+            <img src={blogImage} alt="" style="margin-bottom:50px" />
           )}
           <h1>Recent Posts</h1>
           <BlogSidebar posts={posts} currentId={post.databaseId} />
