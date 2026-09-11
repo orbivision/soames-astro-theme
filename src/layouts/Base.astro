@@ -18,9 +18,15 @@ import {
   getSoamesSettings,
   getMenuByLocation,
 } from "../lib/wp";
+import { htmlToText, truncateAtWord } from "../lib/text";
 
 interface Props {
   pageTitle: string;
+  /**
+   * Raw WordPress excerpt/HTML is fine here — it is stripped to plain text and
+   * length-capped for the meta description (ORBI-68). Markup passed in CANNOT
+   * survive, by design: a meta description must be plain text.
+   */
   description?: string;
   isHomePage?: boolean;
 }
@@ -33,7 +39,18 @@ const [settings, soames, headerMenu, footerMenu] = await Promise.all([
   getMenuByLocation("FOOTER"),
 ]);
 
-const metaDescription = description || settings.description || "";
+// ORBI-68. Two defects this replaces: WP excerpts arrive as HTML, so descriptions
+// emitted raw `<p>…`; and the WP tagline (settings.description) is blank on some
+// installs, so any route that passes no description emitted an EMPTY one.
+// Decode-then-truncate order matters — see truncateAtWord.
+// The last resort is derived rather than hardcoded copy: the theme ships to sites
+// whose subject matter it cannot know, and `pageTitle` is a required prop, so this
+// can never resolve to "". That guarantee is what keeps the e2e assertion in
+// soames-site honest — an absent meta fails Playwright by timeout, not assertion.
+const metaDescription =
+  truncateAtWord(htmlToText(description ?? "")) ||
+  truncateAtWord(htmlToText(settings.description ?? "")) ||
+  truncateAtWord(htmlToText(`${pageTitle} — ${settings.title}`));
 const fullTitle = `${pageTitle} | ${settings.title}`;
 const showCompanyName = soames.showCompanyName ?? true;
 ---
@@ -46,11 +63,11 @@ const showCompanyName = soames.showCompanyName ?? true;
     {metaDescription && <meta name="description" content={metaDescription} />}
     {/* SEO/OG/Twitter — replaces the Gatsby Seo (react-helmet) component */}
     <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={metaDescription} />
+    {metaDescription && <meta property="og:description" content={metaDescription} />}
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content={metaDescription} />
+    {metaDescription && <meta name="twitter:description" content={metaDescription} />}
     {soames.faviconUrl && <link rel="icon" href={soames.faviconUrl} type="image/png" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
