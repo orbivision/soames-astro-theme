@@ -196,6 +196,8 @@ export interface WpPostsPage {
   databaseId: number;
   slug: string;
   title: string;
+  /** Used as /blog/'s meta description (ORBI-68) — mirrors WpDocsPage. */
+  excerpt: string;
   heroTitle: string | null;
   heroCaption: string | null;
   heroBackgroundImage: string | null;
@@ -209,6 +211,7 @@ export async function getPostsPage(): Promise<WpPostsPage | null> {
     databaseId: pp.databaseId,
     slug: pp.slug,
     title: pp.title,
+    excerpt: pp.excerpt,
     heroTitle: pp.heroTitle,
     heroCaption: pp.heroCaption,
     heroBackgroundImage: pp.heroBackgroundImage,

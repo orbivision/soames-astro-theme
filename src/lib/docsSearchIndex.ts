@@ -4,6 +4,8 @@
 // (DocsSearch island) loads that JSON and searches it in-browser with MiniSearch —
 // keeping Soames fully static (no runtime WordPress dependency).
 import { docAncestors, type WpDoc } from "./wp";
+// htmlToText moved to ./text in ORBI-68 — the meta-description path needs it too.
+import { htmlToText } from "./text";
 
 export interface DocSearchRecord {
   /** databaseId — MiniSearch's document id. */
@@ -21,23 +23,6 @@ export interface DocSearchRecord {
 // Guard against a pathologically large doc bloating the index. KB articles are
 // short; this cap is generous and never trims a normal article.
 const MAX_TEXT = 50000;
-
-// Strip HTML tags and decode the handful of entities WP emits, to plain text.
-export function htmlToText(html: string): string {
-  return (html || "")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#0*39;|&apos;/gi, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/&hellip;/gi, "…")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 export function buildDocsSearchIndex(docs: WpDoc[]): DocSearchRecord[] {
   return docs.map((d) => ({
