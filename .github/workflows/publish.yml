@@ -1,5 +1,28 @@
 name: Publish to npm
 
+# ORBI-76: publishes via npm TRUSTED PUBLISHING (OIDC). There is no npm token here.
+#
+# ⚠️ THE FILENAME OF THIS FILE IS REGISTERED ON npmjs.com. The trusted publisher for
+# `soames-astro-theme` is configured as org `orbivision` / repo `soames-astro-theme` /
+# workflow `publish.yml`. Renaming or moving this file — or moving the publish step into a
+# reusable workflow — breaks authentication with NO local signal. Update npmjs.com first.
+#
+# Why this replaced a token (ORBI-74/76): the previous version authenticated with
+# `NODE_AUTH_TOKEN: secrets.NPM_TOKEN`, and `--provenance` only ever produced the SLSA
+# attestation — a signature on the artifact, not the credential. npm is withdrawing that
+# path: bypass-2FA tokens lose direct publishing in January 2027, and granular write tokens
+# cap at a 90-day expiry. Trusted publishing stores nothing, so neither deadline applies.
+#
+# Releasing (see the o-publish-theme skill):
+#   1. bump `version` in package.json inside the feature PR, merge to main
+#   2. git tag v0.1.26 && git push origin v0.1.26
+#
+# If a publish fails on AUTH, check in this order before touching npmjs.com:
+#   1. `npm -v` in the run log — trusted publishing needs >= 11.5.1, and the npm bundled
+#      with Node 22 is 10.9.8. That is what the explicit install step below is for.
+#   2. that this file is still named `publish.yml`
+#   3. the `.npmrc` that setup-node writes (see the registry-url note below)
+
 on:
   push:
     tags:
@@ -7,9 +30,9 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # trusted publishing does NOT work on self-hosted runners
     permissions:
-      id-token: write
+      id-token: write        # the OIDC token IS the credential now, not just provenance
 
     steps:
       - uses: actions/checkout@v4
@@ -17,12 +40,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          # Kept deliberately: it sets the registry that the OIDC exchange targets. It also
+          # writes an .npmrc with an `_authToken` line that now interpolates to empty, which
+          # is harmless but is the third thing to suspect on a puzzling 401.
           registry-url: 'https://registry.npmjs.org'
+
+      # REQUIRED. Node 22 bundles npm 10.9.8; trusted publishing needs >= 11.5.1. Major is
+      # pinned and the patch floats, matching how the Playwright container and CDN versions
+      # are handled elsewhere in this ecosystem.
+      - name: Install an npm that supports trusted publishing
+        run: |
+          npm install -g npm@12
+          npm -v
 
       - run: npm ci
 
       # No build step: the package ships src/ (.ts/.astro) as-is; consuming
       # Astro sites compile it. See package.json "exports" and ORBI-25.
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #
+      # No `--provenance`: trusted publishing generates and publishes the attestation
+      # automatically. Verify it is still there on the published version rather than
+      # assuming — a silently unsigned package is a quiet supply-chain regression.
+      - run: npm publish --access public
