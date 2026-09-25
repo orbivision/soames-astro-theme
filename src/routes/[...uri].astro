@@ -9,6 +9,7 @@ import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
+import { usesKestrel } from "../lib/optimaExpress";
 import { getPages, resolveHeroBg, resolveHeroTitle, resolveHeroCaption } from "../lib/wp";
 
 export async function getStaticPaths() {
@@ -40,7 +41,7 @@ if (import.meta.env.DEV) {
   if (fresh) page = fresh;
 }
 ---
-<Base pageTitle={page.title} description={page.excerpt}>
+<Base pageTitle={page.title} description={page.excerpt} kestrel={usesKestrel(page.content)}>
   <HeroHeader
     title={resolveHeroTitle(page)}
     subhead={resolveHeroCaption(page)}

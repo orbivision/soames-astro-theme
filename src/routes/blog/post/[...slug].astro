@@ -3,6 +3,7 @@
 // content (article: title, date, body, Bio, prev/next) and a sidebar
 // (blog image + Recent Posts via BlogSidebar). Content via the shortcode parser.
 import Base from "@theme/layouts/Base.astro";
+import { usesKestrel } from "../../../lib/optimaExpress";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import Bio from "@theme/components/Bio";
@@ -76,7 +77,7 @@ if (import.meta.env.DEV) {
 // image is decorative, so marking it presentational beats inventing a description.
 const blogImage = post.blogImage;
 ---
-<Base pageTitle={post.title} description={post.excerpt}>
+<Base pageTitle={post.title} description={post.excerpt} kestrel={usesKestrel(post.content)}>
   <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">

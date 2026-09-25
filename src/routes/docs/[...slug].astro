@@ -4,6 +4,7 @@
 // all doc pages (right), instead of the blog's "Recent Posts". Content is run
 // through the same shortcode parser as posts/pages.
 import Base from "@theme/layouts/Base.astro";
+import { usesKestrel } from "../../lib/optimaExpress";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import DocsSidebar from "@theme/components/DocsSidebar";
@@ -79,7 +80,7 @@ const crumbs = [
   { label: doc.title },
 ];
 ---
-<Base pageTitle={doc.title} description={doc.excerpt}>
+<Base pageTitle={doc.title} description={doc.excerpt} kestrel={usesKestrel(doc.content)}>
   <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
