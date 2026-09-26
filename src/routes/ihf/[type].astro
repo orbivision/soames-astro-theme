@@ -1,0 +1,45 @@
+---
+// Optima Express shell — one per virtual-page type (ORBI-82). Netlify rewrites every
+// URL matching one of the type's patterns here (200, so the address bar keeps the real
+// URL), and Kestrel renders the page from location.pathname.
+//
+// Only injected when the WordPress site has Optima Express active, registered and in
+// Kestrel mode.
+//
+// No canonical: this HTML is served for thousands of real URLs, so the only correct
+// canonical is the request's own URL, which isn't known at build time. The page's
+// head (canonical, title, description) is filled in later — by JS (ORBI-82 Phase 2) or
+// at the edge (Phase 3). And never `noindex` on an indexable type: it would deindex
+// every listing that shares this shell.
+import Base from "@theme/layouts/Base.astro";
+import { getSoamesSettings } from "../../lib/wp";
+import { isKestrel, isIndexable, shellTitle, shellTypes } from "../../lib/optimaExpress";
+
+export async function getStaticPaths() {
+  const oe = (await getSoamesSettings()).optimaExpress;
+  if (!isKestrel(oe)) return [];
+  return shellTypes(oe).map((type) => ({ params: { type } }));
+}
+
+const { type } = Astro.params as { type: string };
+const robots = isIndexable(type) ? undefined : "noindex";
+---
+<Base pageTitle={shellTitle(type)} kestrel canonical={false} robots={robots}>
+  <section id="soames-gatsby-content-container" class="soames-gatsby-content soames-ihf-content">
+    <script is:inline>document.currentScript.replaceWith(ihfKestrel.render([]));</script>
+  </section>
+</Base>
+
+<style>
+  /* Scoped to the shell only. Two things .soames-gatsby-content gets wrong for a page with
+     no HeroHeader and no content wrappers:
+       - nothing pushes it below the fixed navbar (.navbar-fixed-top, 77px at both 1024px
+         and 375px), so the top of Kestrel's output sits under it;
+       - its 100px side padding applies at every width, leaving a 375px phone a 175px column.
+     Side padding scales from 16px on a phone up to the theme's own 100px. */
+  .soames-ihf-content {
+    padding-top: calc(77px + 1.5rem);
+    padding-left: clamp(16px, 5vw, 100px);
+    padding-right: clamp(16px, 5vw, 100px);
+  }
+</style>

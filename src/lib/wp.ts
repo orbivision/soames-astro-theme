@@ -454,6 +454,7 @@ export async function getMenuByLocation(location: string): Promise<MenuItem[]> {
 
 // Soames plugin settings via the REST endpoint (same source the Gatsby theme uses
 // in gatsby-node.js sourceNodes — companyName, logo, contactBlurb, etc.).
+import type { OptimaExpressSettings } from "./optimaExpress";
 export interface SoamesSettings {
   logoUrl: string | null;
   logoAlt: string | null;
@@ -465,6 +466,9 @@ export interface SoamesSettings {
   // hero). null when unset, or undefined against an older plugin that predates
   // this field — getDocsPage() treats both as "no docs page".
   docsPageId?: number | null;
+  // ORBI-82: Optima Express IDX. null unless it's active AND registered on the WP site;
+  // undefined against an older plugin. Either way the theme builds no IDX pages.
+  optimaExpress?: OptimaExpressSettings | null;
 }
 export async function getSoamesSettings(): Promise<SoamesSettings> {
   const res = await fetch(`${BASE_URL}/wp-json/soames/v1/settings`, {

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { themeShadow } from './theme-shadow.js';
 import { configureLocalizer } from './lib/localizeImages.js';
 import { downloadImages } from './lib/localizeDownload.js';
+import { isKestrel, writeRedirects, writeRobots, type OptimaExpressSettings } from './lib/optimaExpress.js';
 
 // html-react-parser is CommonJS and pulls a CJS subtree; these must be bundled
 // (noExternal) AND pre-bundled (optimizeDeps) so React dedupes to one copy and
@@ -55,6 +56,26 @@ async function fetchPostsSlug(graphqlUrl: string): Promise<string> {
   }
 }
 
+// ORBI-82: the Optima Express payload decides at config time whether IDX shell routes are
+// injected at all. null (the normal case for every site without it) means inert.
+async function fetchOptimaExpress(baseUrl: string): Promise<OptimaExpressSettings | null> {
+  if (!baseUrl) return null;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(`${baseUrl}/wp-json/soames/v1/settings`, {
+      headers: { 'User-Agent': WP_UA },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const json = (await res.json()) as { optimaExpress?: OptimaExpressSettings | null };
+    return json.optimaExpress ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface SoamesThemeOptions {
   /** WordPress GraphQL endpoint, e.g. http://soames.orbivision.net/graphql */
   wordpressUrl?: string;
@@ -62,6 +83,12 @@ export interface SoamesThemeOptions {
   wordpressBaseUrl?: string;
   /** Hostnames whose images Astro may optimize. */
   imageDomains?: string[];
+  /**
+   * Public origin of the static site, e.g. "https://darst.app". When set, every page
+   * gets a self-referencing `<link rel="canonical">` and `og:url`. Opt-in on purpose
+   * (ORBI-82): a site that doesn't pass it keeps byte-identical output.
+   */
+  siteUrl?: string;
 }
 
 // The Soames Astro theme integration — successor to the Gatsby theme.
@@ -86,6 +113,8 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
     }
   })();
   const imageDomains = options.imageDomains ?? (imageHost ? [imageHost] : []);
+  const siteUrl = (options.siteUrl ?? '').replace(/\/+$/, '');
+  let optimaExpress: OptimaExpressSettings | null = null;
 
   const theme: AstroIntegration = {
     name: 'soames-astro-theme',
@@ -121,6 +150,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
             define: {
               'import.meta.env.WORDPRESS_GRAPHQL_URL': JSON.stringify(wpUrl),
               'import.meta.env.WORDPRESS_BASE_URL': JSON.stringify(wpBase),
+              'import.meta.env.SOAMES_SITE_URL': JSON.stringify(siteUrl),
             },
           },
         });
@@ -144,6 +174,14 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         injectRoute({ pattern: '/docs/search-index.json', entrypoint: 'soames-astro-theme/routes/docs/search-index.json.ts' });
         injectRoute({ pattern: '/docs/[...slug]', entrypoint: 'soames-astro-theme/routes/docs/[...slug].astro' });
 
+        // ORBI-82: Optima Express IDX — one static shell per virtual-page type, only when
+        // the WP site has it active, registered and in Kestrel mode.
+        const oe = await fetchOptimaExpress(wpBase);
+        if (isKestrel(oe)) {
+          optimaExpress = oe;
+          injectRoute({ pattern: '/_ihf/[type]', entrypoint: 'soames-astro-theme/routes/ihf/[type].astro' });
+        }
+
         // When the blog moved off /blog/, redirect the old base path to it.
         if (postsSlug !== 'blog') {
           updateConfig({ redirects: { '/blog': `/${postsSlug}` } });
@@ -153,6 +191,10 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
       // rewrite pass in lib/wp), download every WP image into dist/wp-media/.
       'astro:build:done': async ({ dir, logger }) => {
         await downloadImages(fileURLToPath(dir), WP_UA, logger);
+        if (optimaExpress) {
+          await writeRedirects(fileURLToPath(dir), optimaExpress, logger);
+          await writeRobots(fileURLToPath(dir));
+        }
       },
     },
   };

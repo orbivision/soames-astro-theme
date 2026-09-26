@@ -19,6 +19,7 @@ import {
   getMenuByLocation,
 } from "../lib/wp";
 import { htmlToText, truncateAtWord } from "../lib/text";
+import { isKestrel } from "../lib/optimaExpress";
 
 interface Props {
   pageTitle: string;
@@ -29,8 +30,18 @@ interface Props {
    */
   description?: string;
   isHomePage?: boolean;
+  /**
+   * ORBI-82: this page needs Optima Express's Kestrel loader — an IDX shell, or WordPress
+   * content that embeds a widget (see usesKestrel). Ignored unless the WP site has Optima
+   * Express active, registered and in Kestrel mode.
+   */
+  kestrel?: boolean;
+  /** `false` suppresses the canonical (an IDX shell serves many URLs; its own is unknown). */
+  canonical?: false;
+  /** Meta robots, e.g. "noindex" for IDX account pages. Omitted when unset. */
+  robots?: string;
 }
-const { pageTitle, description, isHomePage = false } = Astro.props;
+const { pageTitle, description, isHomePage = false, kestrel = false, canonical, robots } = Astro.props;
 
 const [settings, soames, headerMenu, footerMenu] = await Promise.all([
   getGeneralSettings(),
@@ -52,6 +63,20 @@ const metaDescription =
   truncateAtWord(htmlToText(settings.description ?? "")) ||
   truncateAtWord(htmlToText(`${pageTitle} — ${settings.title}`));
 const fullTitle = `${pageTitle} | ${settings.title}`;
+
+// ORBI-82 decision A: a canonical only for a site that passed `siteUrl` to the theme
+// explicitly, so sites that haven't opted in keep byte-identical output.
+const siteUrl = import.meta.env.SOAMES_SITE_URL as string;
+const canonicalUrl = siteUrl && canonical !== false ? new URL(Astro.url.pathname, siteUrl).href : null;
+
+// Loaded synchronously in <head>: widgets call ihfKestrel.render() inline while the page
+// parses. It's ~770 KB, so only on pages that use it (decision B). The activationToken is
+// public by design — WordPress prints it in every page Optima Express renders.
+const oe = soames.optimaExpress;
+const kestrelConfig =
+  kestrel && isKestrel(oe)
+    ? `window.ihfKestrel = window.ihfKestrel || {}; ihfKestrel.config = ${JSON.stringify(oe.kestrel).replace(/</g, "\\u003c")};`
+    : null;
 const showCompanyName = soames.showCompanyName ?? true;
 ---
 <!doctype html>
@@ -61,10 +86,13 @@ const showCompanyName = soames.showCompanyName ?? true;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}
+    {robots && <meta name="robots" content={robots} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
     {/* SEO/OG/Twitter — replaces the Gatsby Seo (react-helmet) component */}
     <meta property="og:title" content={pageTitle} />
     {metaDescription && <meta property="og:description" content={metaDescription} />}
     <meta property="og:type" content="website" />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={pageTitle} />
     {metaDescription && <meta name="twitter:description" content={metaDescription} />}
@@ -75,6 +103,8 @@ const showCompanyName = soames.showCompanyName ?? true;
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,500;1,700;1,900&display=swap"
     />
+    {kestrelConfig && <script is:inline set:html={kestrelConfig} />}
+    {kestrelConfig && <script is:inline src="https://kestrel.idxhome.com/ihf-kestrel.js"></script>}
   </head>
   <body>
     {/* `.global-wrapper` matches the Gatsby Layout structure. Crucially, the theme

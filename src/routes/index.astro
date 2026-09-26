@@ -3,6 +3,7 @@
 // with the HeroHeader + content (like the Gatsby page template); otherwise fall
 // back to the blog archive (first page).
 import Base from "@theme/layouts/Base.astro";
+import { usesKestrel } from "../lib/optimaExpress";
 import HeroHeader from "@theme/components/HeroHeader";
 import Shortcodes from "@theme/components/shortcodes/Shortcodes";
 import RemoveContentAreaPadding from "@theme/components/shortcodes/RemoveContentAreaPadding";
@@ -13,7 +14,7 @@ const front = pages.find((p) => p.uri === "/");
 const posts = front ? [] : await getPosts();
 ---
 {front ? (
-  <Base pageTitle={front.title} description={front.excerpt} isHomePage={true}>
+  <Base pageTitle={front.title} description={front.excerpt} isHomePage={true} kestrel={usesKestrel(front.content)}>
     <HeroHeader
       title={resolveHeroTitle(front)}
       subhead={resolveHeroCaption(front)}
