@@ -11,20 +11,46 @@
 // head (canonical, title, description) is filled in later — by JS (ORBI-82 Phase 2) or
 // at the edge (Phase 3). And never `noindex` on an indexable type: it would deindex
 // every listing that shares this shell.
+//
+// Heading: landing types (search, featured, reports, agent/office lists) get a HeroHeader whose
+// image, caption and overlay come from the page chosen in Soames Settings → Optima Express page;
+// every other type — and every type when no page is chosen — gets a slim title bar. The title
+// is per type (shellTitle), never the chosen page's: one page serves all the landing types.
 import Base from "@theme/layouts/Base.astro";
-import { getSoamesSettings } from "../../lib/wp";
-import { isKestrel, isIndexable, shellTitle, shellTypes } from "../../lib/optimaExpress";
+import HeroHeader from "@theme/components/HeroHeader";
+import SoamesTitleBar from "@theme/components/shortcodes/SoamesTitleBar";
+import { getSoamesSettings, getPages, resolveHeroBg, resolveHeroCaption } from "../../lib/wp";
+import { isKestrel, isIndexable, isHeroType, shellTitle, shellTypes } from "../../lib/optimaExpress";
 
 export async function getStaticPaths() {
   const oe = (await getSoamesSettings()).optimaExpress;
   if (!isKestrel(oe)) return [];
-  return shellTypes(oe).map((type) => ({ params: { type } }));
+  // Resolved once here, not per shell.
+  const heroPage = oe.heroPageId
+    ? (await getPages()).find((p) => p.databaseId === oe.heroPageId) ?? null
+    : null;
+  return shellTypes(oe).map((type) => ({ params: { type }, props: { heroPage } }));
 }
 
 const { type } = Astro.params as { type: string };
+const { heroPage } = Astro.props;
 const robots = isIndexable(type) ? undefined : "noindex";
+const title = shellTitle(type);
+const hero = heroPage && isHeroType(type) ? heroPage : null;
 ---
-<Base pageTitle={shellTitle(type)} kestrel canonical={false} robots={robots}>
+<Base pageTitle={title} kestrel canonical={false} robots={robots}>
+  {hero ? (
+    <HeroHeader
+      title={title}
+      subhead={resolveHeroCaption(hero)}
+      backgroundImage={resolveHeroBg(hero)}
+      overlayOpacity={hero.overlayOpacity}
+    />
+  ) : (
+    <div class="soames-ihf-titlebar">
+      <SoamesTitleBar title={title} />
+    </div>
+  )}
   <section id="soames-gatsby-content-container" class="soames-gatsby-content soames-ihf-content">
     <script is:inline>document.currentScript.replaceWith(ihfKestrel.render([]));</script>
   </section>
@@ -32,14 +58,29 @@ const robots = isIndexable(type) ? undefined : "noindex";
 
 <style>
   /* Scoped to the shell only. Two things .soames-gatsby-content gets wrong for a page with
-     no HeroHeader and no content wrappers:
-       - nothing pushes it below the fixed navbar (.navbar-fixed-top, 77px at both 1024px
-         and 375px), so the top of Kestrel's output sits under it;
-       - its 100px side padding applies at every width, leaving a 375px phone a 175px column.
+     no content wrappers:
+       - its 100px side padding applies at every width, leaving a 375px phone a 175px column;
+       - nothing below the heading separates it from Kestrel's output.
      Side padding scales from 16px on a phone up to the theme's own 100px. */
   .soames-ihf-content {
-    padding-top: calc(77px + 1.5rem);
+    padding-top: 1.5rem;
     padding-left: clamp(16px, 5vw, 100px);
     padding-right: clamp(16px, 5vw, 100px);
+  }
+  /* A SLIM title bar for detail and utility pages. The theme's standard bar is a 132px band with
+     a 48px heading — fine between sections, far too much above a listing. Its wrapper also has
+     to clear the fixed navbar, which is 82px at desktop widths (78px on a phone); 77px left it
+     5px underneath. Bootstrap's mt-5/mb-3 are !important utilities, hence !important here. */
+  .soames-ihf-titlebar {
+    padding-top: 82px;
+  }
+  .soames-ihf-titlebar :global(.soames-title-bar) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .soames-ihf-titlebar :global(.soames-title-bar h2) {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin: 0.75rem 0;
   }
 </style>

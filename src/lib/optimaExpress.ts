@@ -26,6 +26,8 @@ export interface OptimaExpressSettings {
   kestrel: { activationToken: string; platform: string };
   routes: OptimaExpressRoute[];
   skippedRules: number;
+  /** Soames Settings → Optima Express page: supplies the landing types' hero. null = none chosen. */
+  heroPageId?: number | null;
 }
 
 /** Only Kestrel-for-every-page works statically; legacy mode needs a request-time server. */
@@ -76,10 +78,80 @@ export function shellPath(type: string): string {
   return `${SHELL_BASE}/${type}/`;
 }
 
-/** Fallback title for a shell, until the page's own head replaces it. */
+// Heading per page type: the hero/title-bar text and the fallback <title>. A static shell
+// can't use Optima Express's own title templates — they interpolate listing data
+// ({listingAddress}) that only exists at request time — so detail pages get a generic heading.
+const TITLES: Record<string, string> = {
+  'idx-search': 'Search Homes',
+  'idx-advanced-search': 'Advanced Search',
+  'idx-map-search': 'Map Search',
+  'idx-results': 'Search Results',
+  'idx-featured-search': 'Featured Listings',
+  'idx-sold-featured-listing': 'Sold Listings',
+  'idx-pending-featured-listing': 'Pending Listings',
+  'idx-supplemental-listing': 'More Listings',
+  'idx-open-home-search-form': 'Open Homes',
+  'idx-hotsheets-list': 'Market Reports',
+  'idx-hotsheets': 'Listing Report',
+  'idx-hotsheet-open-home-report': 'Open Home Report',
+  'idx-hotsheet-market-report': 'Market Report',
+  'idx-agent-list': 'Our Agents',
+  'idx-office-list': 'Our Offices',
+  'idx-mls-portal-agent-list': 'Agent Directory',
+  'idx-mls-portal-agent-list-last-name-starts-with': 'Agent Directory',
+  'idx-mls-portal-office-list': 'Office Directory',
+  'idx-mls-portal-board-list-name-starts-with': 'Office Directory',
+  'idx-mls-portal-agent-search': 'Find an Agent',
+  'idx-mls-portal-office-search': 'Find an Office',
+  'idx-detail': 'Listing Details',
+  'idx-sold-detail': 'Sold Listing',
+  'idx-agent-detail': 'Agent',
+  'idx-office-detail': 'Office',
+  'idx-mls-portal-agent': 'Agent',
+  'idx-mls-portal-office': 'Office',
+  'idx-contact-form': 'Contact Us',
+  'idx-valuation-form': 'Home Valuation',
+  'idx-mortgage-calculator': 'Mortgage Calculator',
+  'idx-property-organizer-edit-saved-search': 'Email Alerts',
+};
+
+/** Heading and fallback <title> for a shell. Unknown or account types get a readable default. */
 export function shellTitle(type: string): string {
+  if (TITLES[type]) return TITLES[type];
+  if (type.startsWith('idx-property-organizer')) return 'Property Organizer';
   const words = type.replace(/^idx-/, '').split('-').join(' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+// Landing types get the full hero; every other type (listing and agent detail, forms, account
+// pages) gets a slim title bar. A hero above a listing would push the price and photos below the
+// fold, where neither visitors nor crawlers look first.
+const HERO_TYPES = new Set([
+  'idx-search',
+  'idx-advanced-search',
+  'idx-map-search',
+  'idx-results',
+  'idx-featured-search',
+  'idx-sold-featured-listing',
+  'idx-pending-featured-listing',
+  'idx-supplemental-listing',
+  'idx-open-home-search-form',
+  'idx-hotsheets-list',
+  'idx-hotsheets',
+  'idx-hotsheet-open-home-report',
+  'idx-hotsheet-market-report',
+  'idx-agent-list',
+  'idx-office-list',
+  'idx-mls-portal-agent-list',
+  'idx-mls-portal-agent-list-last-name-starts-with',
+  'idx-mls-portal-office-list',
+  'idx-mls-portal-board-list-name-starts-with',
+  'idx-mls-portal-agent-search',
+  'idx-mls-portal-office-search',
+]);
+
+export function isHeroType(type: string): boolean {
+  return HERO_TYPES.has(type);
 }
 
 /** Unique types, in first-seen (WordPress rule) order. */
