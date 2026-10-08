@@ -78,9 +78,13 @@ const hero = heroPage && isHeroType(type) ? heroPage : null;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
   }
+  /* Vertically centred: the theme's display-2 heading style adds 12px of padding BELOW the
+     text only, which sat it 12px from the top of the bar and 25px from the bottom. Padding off,
+     and the space moved into equal margins so the bar keeps its 70px height. */
   .soames-ihf-titlebar :global(.soames-title-bar h2) {
     font-size: 1.75rem;
     line-height: 1.2;
-    margin: 0.75rem 0;
+    margin: 1.125rem 0;
+    padding: 0;
   }
 </style>
