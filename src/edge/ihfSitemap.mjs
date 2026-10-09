@@ -14,6 +14,9 @@ import { compileRoutes, matchRoute, groupFor, escapeHtml } from './ihfCommon.mjs
 
 /* global CONFIG */
 const ROUTES = compileRoutes(CONFIG.routes);
+// The sitemaps.org limit per file. A larger account would need a sitemap index and several files;
+// until one shows up, stop at the limit and say so in a header rather than serve an invalid file.
+const MAX_URLS = 50000;
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 soames-ihf-sitemap';
 
@@ -52,6 +55,7 @@ export default async function handler(request) {
   const origin = CONFIG.siteUrl || url.origin;
   const seen = new Set();
   const entries = [];
+  let truncated = false;
   for (const u of body.urls) {
     let path;
     try {
@@ -64,6 +68,10 @@ export default async function handler(request) {
     if (group !== 'all' && groupFor(match.params, CONFIG.split) !== group) continue;
     const loc = new URL(path, origin).href;
     if (seen.has(loc)) continue;
+    if (entries.length >= MAX_URLS) {
+      truncated = true;
+      break;
+    }
     seen.add(loc);
     const mod = lastmod(u.lastmod);
     entries.push(`<url><loc>${escapeHtml(loc)}</loc>${mod ? `<lastmod>${mod}</lastmod>` : ''}</url>`);
@@ -80,6 +88,7 @@ export default async function handler(request) {
       'netlify-cdn-cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400, durable',
       'cache-control': 'public, max-age=0, must-revalidate',
       'x-soames-ihf-count': String(entries.length),
+      ...(truncated ? { 'x-soames-ihf-truncated': `over ${MAX_URLS}` } : {}),
     },
   });
 }
