@@ -16,11 +16,20 @@
 // image, caption and overlay come from the page chosen in Soames Settings → Optima Express page;
 // every other type — and every type when no page is chosen — gets a slim title bar. The title
 // is per type (shellTitle), never the chosen page's: one page serves all the landing types.
+//
+// Head (Phase 3): an indexable shell also carries
+//   - the head marker, where the edge function (when the site enables it) splices the page's own
+//     title, description and canonical from WordPress;
+//   - a small JSON config the edge function and the client head writer both read;
+//   - the client head writer, which fills the same gaps from what Kestrel renders, for pages the
+//     edge didn't handle (the A group, or any edge failure).
 import Base from "@theme/layouts/Base.astro";
 import HeroHeader from "@theme/components/HeroHeader";
 import SoamesTitleBar from "@theme/components/shortcodes/SoamesTitleBar";
-import { getSoamesSettings, getPages, resolveHeroBg, resolveHeroCaption } from "../../lib/wp";
+import { getSoamesSettings, getGeneralSettings, getPages, resolveHeroBg, resolveHeroCaption } from "../../lib/wp";
 import { isKestrel, isIndexable, isHeroType, shellTitle, shellTypes } from "../../lib/optimaExpress";
+import { HEAD_MARKER } from "../../edge/ihfCommon.mjs";
+import headWriterSource from "../../scripts/ihfHeadWriter.js?raw";
 
 export async function getStaticPaths() {
   const oe = (await getSoamesSettings()).optimaExpress;
@@ -37,8 +46,25 @@ const { heroPage } = Astro.props;
 const robots = isIndexable(type) ? undefined : "noindex";
 const title = shellTitle(type);
 const hero = heroPage && isHeroType(type) ? heroPage : null;
+const indexable = isIndexable(type);
+// Comment lines stripped: the source documents itself at length, and that shouldn't ship in every
+// listing page. (The source keeps every comment on a line of its own for exactly this.)
+const headWriter = headWriterSource.replace(/^\s*\/\/.*\n/gm, "");
+const headConfig = indexable
+  ? JSON.stringify({
+      siteTitle: (await getGeneralSettings()).title,
+      siteUrl: (import.meta.env.SOAMES_SITE_URL as string) || null,
+    }).replace(/</g, "\\u003c")
+  : null;
 ---
 <Base pageTitle={title} kestrel canonical={false} robots={robots}>
+  {indexable && (
+    <Fragment slot="head">
+      <Fragment set:html={HEAD_MARKER} />
+      <script is:inline type="application/json" id="soames-ihf-config" set:html={headConfig} />
+      <script is:inline set:html={headWriter} />
+    </Fragment>
+  )}
   {hero ? (
     <HeroHeader
       title={title}

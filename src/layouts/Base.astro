@@ -105,6 +105,7 @@ const showCompanyName = soames.showCompanyName ?? true;
     />
     {kestrelConfig && <script is:inline set:html={kestrelConfig} />}
     {kestrelConfig && <script is:inline src="https://kestrel.idxhome.com/ihf-kestrel.js"></script>}
+    <slot name="head" />
   </head>
   <body>
     {/* `.global-wrapper` matches the Gatsby Layout structure. Crucially, the theme

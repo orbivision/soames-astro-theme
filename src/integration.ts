@@ -7,6 +7,7 @@ import { themeShadow } from './theme-shadow.js';
 import { configureLocalizer } from './lib/localizeImages.js';
 import { downloadImages } from './lib/localizeDownload.js';
 import { isKestrel, writeRedirects, writeRobots, type OptimaExpressSettings } from './lib/optimaExpress.js';
+import { writeEdge, removeEdge, type OptimaExpressEdgeOptions } from './lib/ihfEdge.js';
 
 // html-react-parser is CommonJS and pulls a CJS subtree; these must be bundled
 // (noExternal) AND pre-bundled (optimizeDeps) so React dedupes to one copy and
@@ -89,6 +90,16 @@ export interface SoamesThemeOptions {
    * (ORBI-82): a site that doesn't pass it keeps byte-identical output.
    */
   siteUrl?: string;
+  /** Optima Express (ORBI-82). Only acts when the WordPress site has it registered in Kestrel mode. */
+  optimaExpress?: {
+    /**
+     * Netlify edge function that serves each indexable IDX page with its own head (title,
+     * description, canonical) from WordPress, real 404s and slug redirects. Needs Soames plugin
+     * 1.5.0+ with an Edge secret, and the same value in the site's SOAMES_EDGE_SECRET.
+     * `true` for the defaults, or an options object. Off by default.
+     */
+    edge?: boolean | OptimaExpressEdgeOptions;
+  };
 }
 
 // The Soames Astro theme integration — successor to the Gatsby theme.
@@ -115,12 +126,19 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
   const imageDomains = options.imageDomains ?? (imageHost ? [imageHost] : []);
   const siteUrl = (options.siteUrl ?? '').replace(/\/+$/, '');
   let optimaExpress: OptimaExpressSettings | null = null;
+  let root = process.cwd();
+  const edgeOptions: OptimaExpressEdgeOptions | null = options.optimaExpress?.edge
+    ? options.optimaExpress.edge === true
+      ? {}
+      : options.optimaExpress.edge
+    : null;
 
   const theme: AstroIntegration = {
     name: 'soames-astro-theme',
     hooks: {
       'astro:config:setup': async ({ command, config, updateConfig, injectRoute }) => {
         const overrideDir = path.join(fileURLToPath(config.srcDir), 'overrides');
+        root = fileURLToPath(config.root);
 
         // ORBI-51: enable image localization on `astro build` only. In `astro dev`
         // it's a no-op (WP URLs pass through) so editors keep seeing live WP edits
@@ -194,6 +212,13 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         if (optimaExpress) {
           await writeRedirects(fileURLToPath(dir), optimaExpress, logger);
           await writeRobots(fileURLToPath(dir));
+        }
+        // Always reconcile: a local .netlify/ survives between builds, so a site that turns the
+        // edge off (or loses Optima Express) must not keep deploying the last generated one.
+        if (optimaExpress && edgeOptions) {
+          await writeEdge(root, optimaExpress, edgeOptions, { siteUrl, wpBase }, logger);
+        } else {
+          await removeEdge(root);
         }
       },
     },
