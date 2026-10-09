@@ -23,6 +23,11 @@
   } catch (e) {
     return;
   }
+  // The edge already wrote this page's head (group B): its splice always adds a canonical, and a
+  // plain shell never has one while it's being parsed. Stand down entirely. Without this check,
+  // 0.1.30 read the edge's title as "the shell's generic title" (it was simply the title at parse
+  // time) and replaced WordPress's head with Kestrel's on every B page.
+  if (document.head.querySelector('link[rel="canonical"]')) return;
   // The shell's generic values, read while the head is still being parsed — before Kestrel or
   // anything else can change them. "Still equal to these" is what "not yet filled" means below.
   var descTag = document.head.querySelector('meta[name="description"]');
