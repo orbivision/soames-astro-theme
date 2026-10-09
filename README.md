@@ -61,6 +61,44 @@ src/overrides/layouts/Base.astro      → replaces the theme's layouts/Base.astr
 Whole-file replacement, resolved at build time, zero changes at the import site —
 the direct successor to Gatsby component shadowing.
 
+## Optima Express (IDX)
+
+When the WordPress site has the Optima Express plugin active, registered and in Kestrel mode
+(the Soames plugin reports this in `soames/v1/settings`), the build adds one static shell per
+IDX page type and merges a rewrite for every IDX URL pattern into `dist/_redirects`. Sites
+without it build exactly as before.
+
+Two options improve what search engines see:
+
+```js
+soamesTheme({
+  wordpressUrl,
+  // Self-referencing canonicals on every page. Also used as the IDX pages' canonical origin.
+  siteUrl: 'https://example.com',
+  optimaExpress: {
+    // Netlify only. Serves each indexable IDX page with its own title, description and
+    // canonical, real 404s for listings that don't exist, and a 301 for a wrong address slug.
+    edge: true,
+  },
+}),
+```
+
+`edge` needs Soames plugin **1.5.0+** with an **Edge secret** set (Soames → Settings), and the
+same value as the `SOAMES_EDGE_SECRET` environment variable on the Netlify site. It generates a
+Netlify edge function and a cached function into `.netlify/v1/` at build time, with no
+`netlify.toml` entry needed. Add `.netlify/` to `.gitignore`. Each response carries an
+`X-Soames-IHF` header that says what the edge did.
+
+`edge` also takes an object:
+- `split: true` serves odd-numbered listings with the browser-side head only, for comparing the
+  two approaches;
+- `displayability: { url, headers }` is an optional status check per listing, where a 404 makes
+  the page a real 404. `{listingNumber}`, `{boardId}` and `{activationToken}` are filled in;
+- `headTimeoutMs` sets how long the edge waits for WordPress (default 8000).
+
+Without `edge`, a small script in each shell fills in the title, description and canonical in
+the browser once the listing has rendered.
+
 ## WordPress sourcing notes
 
 - Sources via WPGraphQL (`fetch()`), with Site Assets from the Soames plugin REST
