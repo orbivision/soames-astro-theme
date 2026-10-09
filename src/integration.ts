@@ -209,16 +209,18 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
       // rewrite pass in lib/wp), download every WP image into dist/wp-media/.
       'astro:build:done': async ({ dir, logger }) => {
         await downloadImages(fileURLToPath(dir), WP_UA, logger);
-        if (optimaExpress) {
-          await writeRedirects(fileURLToPath(dir), optimaExpress, logger);
-          await writeRobots(fileURLToPath(dir));
-        }
         // Always reconcile: a local .netlify/ survives between builds, so a site that turns the
         // edge off (or loses Optima Express) must not keep deploying the last generated one.
+        let sitemaps: string[] = [];
         if (optimaExpress && edgeOptions) {
-          await writeEdge(root, optimaExpress, edgeOptions, { siteUrl, wpBase }, logger);
+          sitemaps = await writeEdge(root, optimaExpress, edgeOptions, { siteUrl, wpBase }, logger);
         } else {
           await removeEdge(root);
+        }
+        if (optimaExpress) {
+          await writeRedirects(fileURLToPath(dir), optimaExpress, logger);
+          // robots.txt needs absolute sitemap URLs, so only with siteUrl.
+          await writeRobots(fileURLToPath(dir), siteUrl ? sitemaps.map((p) => `${siteUrl}${p}`) : []);
         }
       },
     },
