@@ -27,14 +27,20 @@ export function escapeHtml(s) {
  * separator (2600 GATTIS SCHOOL – A ROAD), and a site name may itself contain one.
  */
 export function stripSiteName(title, siteName) {
-  const t = decodeEntities(title || '').trim();
-  const n = decodeEntities(siteName || '').trim();
+  const t = decodeEntities(title || '').replace(/\s+/g, ' ').trim();
+  const n = decodeEntities(siteName || '').replace(/\s+/g, ' ').trim();
+  let out = t;
   if (n) {
     for (const sep of [' – ', ' — ', ' - ', ' | ']) {
-      if (t.endsWith(sep + n)) return t.slice(0, -(sep + n).length).trim();
+      if (t.endsWith(sep + n)) {
+        out = t.slice(0, -(sep + n).length);
+        break;
+      }
     }
   }
-  return t;
+  // Optima Express title templates leave a dangling separator when a field is empty: the agent
+  // template gave "Sally McSeller,  – Site" for an agent with no office (ORBI-82, 2026-10-09).
+  return out.replace(/[\s,;:|–—-]+$/, '').trim();
 }
 
 /**

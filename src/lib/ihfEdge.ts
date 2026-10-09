@@ -33,6 +33,7 @@ export interface OptimaExpressEdgeOptions {
 
 const EDGE_FILE = 'soames-ihf.js';
 const HEAD_FILE = 'soames-ihf-head.mjs';
+const SITEMAP_FILE = 'soames-ihf-sitemap.mjs';
 const HEAD_PATH = '/_soames/ihf-head';
 
 /** `/a/:x/:y` → anchored regex source with one group per param, trailing slash optional. */
@@ -59,7 +60,11 @@ function inline(src: string, stripExports: boolean): string {
 export async function removeEdge(root: string): Promise<void> {
   await fs.rm(path.join(root, '.netlify', 'v1', 'edge-functions', EDGE_FILE), { force: true });
   await fs.rm(path.join(root, '.netlify', 'v1', 'functions', HEAD_FILE), { force: true });
+  await fs.rm(path.join(root, '.netlify', 'v1', 'functions', SITEMAP_FILE), { force: true });
 }
+
+/** Where the Optima Express sitemap is served. */
+export const SITEMAP_PATH = '/sitemap-idx.xml';
 
 export async function writeEdge(
   root: string,
@@ -67,7 +72,7 @@ export async function writeEdge(
   opts: OptimaExpressEdgeOptions,
   site: { siteUrl: string; wpBase: string },
   logger: { info(m: string): void; warn(m: string): void },
-): Promise<void> {
+): Promise<string[]> {
   const routes = oe.routes.filter((r) => isIndexable(r.type)).map((r) => ({ type: r.type, path: r.path, ...toPattern(r) }));
   if (!site.siteUrl) {
     logger.warn('Optima Express edge: no `siteUrl` option, so canonicals will name whichever host served the request.');
@@ -102,13 +107,24 @@ export async function writeEdge(
     inline(await source('ihfHead.mjs'), false) +
     `\nexport const config = ${JSON.stringify({ path: `${HEAD_PATH}/*` })};\n`;
 
+  // Optima Express sitemap (Phase 4): needs Soames plugin 1.6.0+; served at request time, cached.
+  const sitemapConfig = { routes, wpBase: headConfig.wpBase, siteUrl: site.siteUrl, wpTimeoutMs: 20000 };
+  const sitemap =
+    header +
+    `const CONFIG = ${JSON.stringify(sitemapConfig)};\n` +
+    common +
+    inline(await source('ihfSitemap.mjs'), false) +
+    `\nexport const config = ${JSON.stringify({ path: SITEMAP_PATH })};\n`;
+
   const edgeDir = path.join(root, '.netlify', 'v1', 'edge-functions');
   const fnDir = path.join(root, '.netlify', 'v1', 'functions');
   await fs.mkdir(edgeDir, { recursive: true });
   await fs.mkdir(fnDir, { recursive: true });
   await fs.writeFile(path.join(edgeDir, EDGE_FILE), edge);
   await fs.writeFile(path.join(fnDir, HEAD_FILE), head);
+  await fs.writeFile(path.join(fnDir, SITEMAP_FILE), sitemap);
   logger.info(
-    `Optima Express edge: ${routes.length} indexable route(s)${opts.split ? ', A/B split on' : ''}${opts.displayability ? ', displayability check on' : ''} → .netlify/v1/`,
+    `Optima Express edge: ${routes.length} indexable route(s)${opts.split ? ', A/B split on' : ''}${opts.displayability ? ', displayability check on' : ''}, sitemap ${SITEMAP_PATH} → .netlify/v1/`,
   );
+  return [SITEMAP_PATH];
 }

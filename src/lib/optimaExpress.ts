@@ -211,7 +211,7 @@ export async function writeRedirects(
  * served for every real listing URL through the rewrites, so a noindex in it would
  * deindex every listing. Disallow blocks only fetches OF /_ihf/ URLs.
  */
-export async function writeRobots(distDir: string): Promise<void> {
+export async function writeRobots(distDir: string, sitemaps: string[] = []): Promise<void> {
   const file = path.join(distDir, 'robots.txt');
   let existing = '';
   try {
@@ -219,11 +219,19 @@ export async function writeRobots(distDir: string): Promise<void> {
   } catch {
     /* no site robots.txt */
   }
+  const lines = existing.split('\n').map((l) => l.trim());
   const rule = `Disallow: ${SHELL_BASE}/`;
-  if (existing.split('\n').some((l) => l.trim() === rule)) return;
-  const sep = existing && !existing.endsWith('\n') ? '\n' : '';
+  let out = existing;
+  const append = (text: string) => {
+    const sep = out && !out.endsWith('\n') ? '\n' : '';
+    out = `${out}${sep}${out ? '\n' : ''}${text}`;
+  };
   // Its own group, so it can't be scoped into a site's bot-specific group by accident.
-  await fs.writeFile(file, `${existing}${sep}${existing ? '\n' : ''}User-agent: *\n${rule}\n`);
+  if (!lines.includes(rule)) append(`User-agent: *\n${rule}\n`);
+  // `Sitemap:` lines stand outside any group and must be absolute URLs (ORBI-82 Phase 4).
+  const missing = sitemaps.map((u) => `Sitemap: ${u}`).filter((l) => !lines.includes(l));
+  if (missing.length) append(`${missing.join('\n')}\n`);
+  if (out !== existing) await fs.writeFile(file, out);
 }
 
 function escape(s: string): string {
