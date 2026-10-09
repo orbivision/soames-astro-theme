@@ -1,16 +1,17 @@
-// Optima Express listing sitemaps (ORBI-82 Phase 4): a Netlify Function, generated alongside the
-// edge function when a site enables `optimaExpress.edge` (src/lib/ihfEdge.ts).
+// Optima Express sitemap (ORBI-82 Phase 4): a Netlify Function, generated alongside the edge
+// function when a site enables `optimaExpress.edge` (src/lib/ihfEdge.ts).
 //
 // Optima Express publishes no sitemap a static site can serve; the Soames plugin (1.6.0+) exposes
-// its listing URLs at soames/v1/optima-express/sitemap. This serves them on the site's own origin,
-// at request time — listings change daily, and a file written at build would only refresh when
-// WordPress content is published — durably cached like the head.
+// the URLs its service lists, at soames/v1/optima-express/sitemap. This serves them on the site's
+// own origin at request time, durably cached like the head, so a change on the Optima Express side
+// shows up without a rebuild.
 //
-// With the A/B split on, one file per group, split by the same groupFor() the edge uses, so Search
-// Console reports indexing per group. Only URLs matching an indexable route are listed, each moved
-// onto the site's origin.
+// NOT a listings sitemap. Measured on a live account (ORBI-82, 2026-10-09), the service lists
+// saved-search reports and agents, and no listing pages at all; listings are discovered by
+// crawling rendered pages, on WordPress as much as here. Only URLs matching an indexable route are
+// kept, each moved onto the site's origin.
 
-import { compileRoutes, matchRoute, groupFor, escapeHtml } from './ihfCommon.mjs';
+import { compileRoutes, matchRoute, escapeHtml } from './ihfCommon.mjs';
 
 /* global CONFIG */
 const ROUTES = compileRoutes(CONFIG.routes);
@@ -36,8 +37,6 @@ function lastmod(value) {
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  const group = CONFIG.files[url.pathname];
-  if (!group) return new Response('Not found', { status: 404 });
 
   let body;
   try {
@@ -63,9 +62,7 @@ export default async function handler(request) {
     } catch {
       continue;
     }
-    const match = matchRoute(ROUTES, path);
-    if (!match) continue;
-    if (group !== 'all' && groupFor(match.params, CONFIG.split) !== group) continue;
+    if (!matchRoute(ROUTES, path)) continue;
     const loc = new URL(path, origin).href;
     if (seen.has(loc)) continue;
     if (entries.length >= MAX_URLS) {

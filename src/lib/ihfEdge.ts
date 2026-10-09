@@ -63,10 +63,8 @@ export async function removeEdge(root: string): Promise<void> {
   await fs.rm(path.join(root, '.netlify', 'v1', 'functions', SITEMAP_FILE), { force: true });
 }
 
-/** The listing sitemap paths a site serves: one per experiment group, or one in all. */
-export function sitemapFiles(opts: OptimaExpressEdgeOptions): Record<string, 'A' | 'B' | 'all'> {
-  return opts.split ? { '/sitemap-idx-a.xml': 'A', '/sitemap-idx-b.xml': 'B' } : { '/sitemap-idx.xml': 'all' };
-}
+/** Where the Optima Express sitemap is served. */
+export const SITEMAP_PATH = '/sitemap-idx.xml';
 
 export async function writeEdge(
   root: string,
@@ -109,15 +107,14 @@ export async function writeEdge(
     inline(await source('ihfHead.mjs'), false) +
     `\nexport const config = ${JSON.stringify({ path: `${HEAD_PATH}/*` })};\n`;
 
-  // Listing sitemaps (Phase 4): needs Soames plugin 1.6.0+; served at request time, cached.
-  const files = sitemapFiles(opts);
-  const sitemapConfig = { routes, wpBase: headConfig.wpBase, siteUrl: site.siteUrl, split: !!opts.split, files, wpTimeoutMs: 20000 };
+  // Optima Express sitemap (Phase 4): needs Soames plugin 1.6.0+; served at request time, cached.
+  const sitemapConfig = { routes, wpBase: headConfig.wpBase, siteUrl: site.siteUrl, wpTimeoutMs: 20000 };
   const sitemap =
     header +
     `const CONFIG = ${JSON.stringify(sitemapConfig)};\n` +
     common +
     inline(await source('ihfSitemap.mjs'), false) +
-    `\nexport const config = ${JSON.stringify({ path: Object.keys(files) })};\n`;
+    `\nexport const config = ${JSON.stringify({ path: SITEMAP_PATH })};\n`;
 
   const edgeDir = path.join(root, '.netlify', 'v1', 'edge-functions');
   const fnDir = path.join(root, '.netlify', 'v1', 'functions');
@@ -127,7 +124,7 @@ export async function writeEdge(
   await fs.writeFile(path.join(fnDir, HEAD_FILE), head);
   await fs.writeFile(path.join(fnDir, SITEMAP_FILE), sitemap);
   logger.info(
-    `Optima Express edge: ${routes.length} indexable route(s)${opts.split ? ', A/B split on' : ''}${opts.displayability ? ', displayability check on' : ''}, sitemap(s) ${Object.keys(files).join(' ')} → .netlify/v1/`,
+    `Optima Express edge: ${routes.length} indexable route(s)${opts.split ? ', A/B split on' : ''}${opts.displayability ? ', displayability check on' : ''}, sitemap ${SITEMAP_PATH} → .netlify/v1/`,
   );
-  return Object.keys(files);
+  return [SITEMAP_PATH];
 }

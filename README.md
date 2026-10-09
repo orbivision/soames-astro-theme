@@ -87,7 +87,9 @@ soamesTheme({
 same value as the `SOAMES_EDGE_SECRET` environment variable on the Netlify site. It generates a
 Netlify edge function and a cached function into `.netlify/v1/` at build time, with no
 `netlify.toml` entry needed. Add `.netlify/` to `.gitignore`. Each response carries an
-`X-Soames-IHF` header that says what the edge did.
+`X-Soames-IHF` header that says what the edge did. It also serves `/sitemap-idx.xml`, listed in `robots.txt`, with the
+pages Optima Express's own sitemap lists (saved-search reports and agents; it lists no listings).
+That needs Soames plugin **1.6.0+**.
 
 `edge` also takes an object:
 - `split: true` serves odd-numbered listings with the browser-side head only, for comparing the
