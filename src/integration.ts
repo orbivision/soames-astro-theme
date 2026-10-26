@@ -180,6 +180,9 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         // over an injected route, so sites can still override pages directly.
         injectRoute({ pattern: '/', entrypoint: 'soames-astro-theme/routes/index.astro' });
         injectRoute({ pattern: '/[...uri]', entrypoint: 'soames-astro-theme/routes/[...uri].astro' });
+        // ORBI-85: WordPress Preview lands here (the plugin 302s to /preview/?token=…). A static
+        // route outranks the /[...uri] catch-all, and a WP page with the uri `preview` would collide.
+        injectRoute({ pattern: '/preview', entrypoint: 'soames-astro-theme/routes/preview.astro' });
         // Blog archive lives at the Posts-page slug (default /blog/). Individual
         // posts stay at /blog/post/<slug>/ regardless.
         injectRoute({ pattern: `/${postsSlug}/[...page]`, entrypoint: 'soames-astro-theme/routes/blog/[...page].astro' });
