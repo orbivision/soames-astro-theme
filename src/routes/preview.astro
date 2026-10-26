@@ -5,9 +5,14 @@
 // whatever draft it is handed, and only for five minutes.
 import Base from "@theme/layouts/Base.astro";
 import PreviewPage from "@theme/components/PreviewPage";
+import { getPosts } from "../lib/wp";
 
 const wordpressBaseUrl = import.meta.env.WORDPRESS_BASE_URL || "";
+// Recent Posts for a previewed post's sidebar, as of this build — trimmed to what a card shows.
+const recentPosts = (await getPosts()).map(({ databaseId, title, slug, date, excerpt }) => ({
+  databaseId, title, slug, date, excerpt,
+}));
 ---
 <Base pageTitle="Preview" robots="noindex, nofollow" canonical={false}>
-  <PreviewPage client:only="react" wordpressBaseUrl={wordpressBaseUrl} />
+  <PreviewPage client:only="react" wordpressBaseUrl={wordpressBaseUrl} recentPosts={recentPosts} />
 </Base>
