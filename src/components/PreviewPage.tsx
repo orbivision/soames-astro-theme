@@ -7,14 +7,18 @@
 // the SAME components the build uses, so a preview looks like the page will. Nothing runs on the
 // server: the browser talks to WordPress directly (WP core's REST CORS echoes the site's origin).
 //
-// Deliberately absent, because each needs data the token doesn't carry: prev/next navigation,
-// Recent Posts, the author Bio. Build-time media localization doesn't run either, so images load
-// straight from WordPress.
+// Recent Posts come from the build (routes/preview.astro bakes the list in), so they are as fresh as
+// the last deploy — the same list the published post's sidebar will show. Deliberately absent:
+// prev/next navigation and the author Bio, which need data the token doesn't carry. Build-time media
+// localization doesn't run either, so images load straight from WordPress.
 import React, { useEffect, useState } from "react";
+import parse from "html-react-parser";
 import HeroHeader from "./HeroHeader";
 import Shortcodes from "./shortcodes/Shortcodes";
 import RemoveContentAreaPadding from "./shortcodes/RemoveContentAreaPadding";
+import BlogSidebar, { type SidebarPost } from "./BlogSidebar";
 import { resolveHeroBg, resolveHeroTitle, resolveHeroCaption } from "../lib/hero";
+import { htmlToText } from "../lib/text";
 
 interface PreviewImage {
   sourceUrl: string;
@@ -52,6 +56,8 @@ type State =
 export interface PreviewPageProps {
   /** The WordPress this site builds from (WORDPRESS_BASE_URL). The token only exists there. */
   wordpressBaseUrl: string;
+  /** Published posts as of the last build, for the Recent Posts sidebar. */
+  recentPosts?: SidebarPost[];
 }
 
 // soames-site's fallback WordPress URL is http://; a browser on an https page blocks that fetch as
@@ -63,7 +69,7 @@ function restOrigin(base: string): string {
 
 const opacity = (v?: string | null) => (v ? Number(v) : null);
 
-const PreviewPage: React.FC<PreviewPageProps> = ({ wordpressBaseUrl }) => {
+const PreviewPage: React.FC<PreviewPageProps> = ({ wordpressBaseUrl, recentPosts = [] }) => {
   const [state, setState] = useState<State>({ status: "loading" });
 
   useEffect(() => {
@@ -84,7 +90,9 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ wordpressBaseUrl }) => {
           setState({ status: "error", message: data.message ?? "Could not load the preview." });
         } else {
           setState({ status: "ready", content: data as PreviewContent });
-          document.title = `Preview: ${data.title}`;
+          // The REST title is the_title()-filtered, so wptexturize has turned " - " into &#8211;
+          // and quotes into entities. GraphQL decodes them; this has to.
+          document.title = `Preview: ${htmlToText(data.title)}`;
         }
       })
       .catch((err: Error) => {
@@ -125,7 +133,7 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ wordpressBaseUrl }) => {
               <section id="soames-gatsby-content-container" className="soames-gatsby-blog-content">
                 <article className="blog-post soames-prose">
                   <header>
-                    <h1>{c.title}</h1>
+                    <h1>{parse(c.title)}</h1>
                     {c.date && <p>{c.date}</p>}
                   </header>
                   {c.content && (
@@ -139,6 +147,12 @@ const PreviewPage: React.FC<PreviewPageProps> = ({ wordpressBaseUrl }) => {
             <div className="col-12 col-lg-4">
               <section id="soames-gatsby-sidebar-container" className="soames-gatsby-sidebar">
                 {c.blogImage && <img src={c.blogImage} alt="" style={{ marginBottom: 50 }} />}
+                {recentPosts.length > 0 && (
+                  <>
+                    <h1>Recent Posts</h1>
+                    <BlogSidebar posts={recentPosts} />
+                  </>
+                )}
               </section>
             </div>
           </div>

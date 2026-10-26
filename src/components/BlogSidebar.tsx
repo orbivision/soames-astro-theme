@@ -6,8 +6,12 @@ import parse from "html-react-parser";
 import type { WpPost } from "../lib/wp";
 import { formatPostDate } from "../lib/date";
 
+// Only the fields a card shows — so the preview island (ORBI-85) can be handed a trimmed list
+// instead of every post's full content.
+export type SidebarPost = Pick<WpPost, "databaseId" | "title" | "slug" | "date" | "excerpt">;
+
 interface BlogSidebarProps {
-  posts: WpPost[];
+  posts: SidebarPost[];
   currentId: number;
 }
 
