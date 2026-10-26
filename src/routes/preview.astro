@@ -1,0 +1,13 @@
+---
+// ORBI-85: WordPress Preview. One static shell; the PreviewPage island fetches the draft named by
+// ?token= from WordPress in the browser. client:only because there is nothing to server-render —
+// the content doesn't exist until the token is read. noindex and no canonical: this URL serves
+// whatever draft it is handed, and only for five minutes.
+import Base from "@theme/layouts/Base.astro";
+import PreviewPage from "@theme/components/PreviewPage";
+
+const wordpressBaseUrl = import.meta.env.WORDPRESS_BASE_URL || "";
+---
+<Base pageTitle="Preview" robots="noindex, nofollow" canonical={false}>
+  <PreviewPage client:only="react" wordpressBaseUrl={wordpressBaseUrl} />
+</Base>
