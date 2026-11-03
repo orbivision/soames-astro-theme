@@ -40,8 +40,24 @@ interface Props {
   canonical?: false;
   /** Meta robots, e.g. "noindex" for IDX account pages. Omitted when unset. */
   robots?: string;
+  /**
+   * ORBI-88: the share image (`og:image`), as the localized root-relative path the
+   * WP layer returns. Emitted only when the site passed `siteUrl` — see shareImage.
+   */
+  image?: string | null;
+  /** ORBI-88: `og:type`. Blog posts pass "article"; everything else is a website. */
+  ogType?: "website" | "article";
 }
-const { pageTitle, description, isHomePage = false, kestrel = false, canonical, robots } = Astro.props;
+const {
+  pageTitle,
+  description,
+  isHomePage = false,
+  kestrel = false,
+  canonical,
+  robots,
+  image,
+  ogType = "website",
+} = Astro.props;
 
 const [settings, soames, headerMenu, footerMenu] = await Promise.all([
   getGeneralSettings(),
@@ -69,6 +85,13 @@ const fullTitle = `${pageTitle} | ${settings.title}`;
 const siteUrl = import.meta.env.SOAMES_SITE_URL as string;
 const canonicalUrl = siteUrl && canonical !== false ? new URL(Astro.url.pathname, siteUrl).href : null;
 
+// ORBI-88. Facebook ignores a relative og:image, so it needs the public origin — no
+// siteUrl, no image. Only a root-relative path qualifies: that is the localized copy
+// Netlify serves. An absolute URL here means the localizer passed it through, i.e. it
+// still points at the WordPress host, and sharing that would expose the backend and
+// make every preview depend on WP being up when the scraper calls.
+const shareImage = siteUrl && image?.startsWith("/") && !image.startsWith("//") ? new URL(image, siteUrl).href : null;
+
 // Loaded synchronously in <head>: widgets call ihfKestrel.render() inline while the page
 // parses. It's ~770 KB, so only on pages that use it (decision B). The activationToken is
 // public by design — WordPress prints it in every page Optima Express renders.
@@ -91,9 +114,10 @@ const showCompanyName = soames.showCompanyName ?? true;
     {/* SEO/OG/Twitter — replaces the Gatsby Seo (react-helmet) component */}
     <meta property="og:title" content={pageTitle} />
     {metaDescription && <meta property="og:description" content={metaDescription} />}
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
-    <meta name="twitter:card" content="summary" />
+    {shareImage && <meta property="og:image" content={shareImage} />}
+    <meta name="twitter:card" content={shareImage ? "summary_large_image" : "summary"} />
     <meta name="twitter:title" content={pageTitle} />
     {metaDescription && <meta name="twitter:description" content={metaDescription} />}
     {soames.faviconUrl && <link rel="icon" href={soames.faviconUrl} type="image/png" />}

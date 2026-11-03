@@ -75,9 +75,18 @@ if (import.meta.env.DEV) {
 // astro:assets processing is a non-loss: the emitted srcset pointed both widths at the
 // same unresized file. alt="" is deliberate — the field carries no alt text, and this
 // image is decorative, so marking it presentational beats inventing a description.
+//
+// ORBI-88: the same image is the post's share image (og:image), with the same
+// no-fallback rule — a post without a Blog Image shares without a picture.
 const blogImage = post.blogImage;
 ---
-<Base pageTitle={post.title} description={post.excerpt} kestrel={usesKestrel(post.content)}>
+<Base
+  pageTitle={post.title}
+  description={post.excerpt}
+  kestrel={usesKestrel(post.content)}
+  image={blogImage}
+  ogType="article"
+>
   <HeroHeader title={heroTitle} subhead={heroCaption} backgroundImage={heroBg} overlayOpacity={heroOverlay} />
   <section>
     <div class="media-container-row">
