@@ -6,7 +6,9 @@ import path from 'node:path';
 import { themeShadow } from './theme-shadow.js';
 import { configureLocalizer } from './lib/localizeImages.js';
 import { downloadImages } from './lib/localizeDownload.js';
-import { isKestrel, writeRedirects, writeRobots, type OptimaExpressSettings } from './lib/optimaExpress.js';
+import { isKestrel, writeRedirects, SHELL_BASE, type OptimaExpressSettings } from './lib/optimaExpress.js';
+import { writeRobots } from './lib/robots.js';
+import { writeSitemap, fetchLastmod } from './lib/sitemap.js';
 import { writeEdge, removeEdge, type OptimaExpressEdgeOptions } from './lib/ihfEdge.js';
 
 // html-react-parser is CommonJS and pulls a CJS subtree; these must be bundled
@@ -126,6 +128,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
   const imageDomains = options.imageDomains ?? (imageHost ? [imageHost] : []);
   const siteUrl = (options.siteUrl ?? '').replace(/\/+$/, '');
   let optimaExpress: OptimaExpressSettings | null = null;
+  let postsSlug = 'blog';
   let root = process.cwd();
   const edgeOptions: OptimaExpressEdgeOptions | null = options.optimaExpress?.edge
     ? options.optimaExpress.edge === true
@@ -174,7 +177,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         });
 
         // Blog base slug from the WP "Posts page" (Settings → Reading), or 'blog'.
-        const postsSlug = await fetchPostsSlug(wpUrl);
+        postsSlug = await fetchPostsSlug(wpUrl);
 
         // Theme-provided routes. A site file at the same path takes precedence
         // over an injected route, so sites can still override pages directly.
@@ -210,8 +213,9 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
       },
       // ORBI-51: after the static build renders (registry now populated by the
       // rewrite pass in lib/wp), download every WP image into dist/wp-media/.
-      'astro:build:done': async ({ dir, logger }) => {
-        await downloadImages(fileURLToPath(dir), WP_UA, logger);
+      'astro:build:done': async ({ dir, pages, logger }) => {
+        const distDir = fileURLToPath(dir);
+        await downloadImages(distDir, WP_UA, logger);
         // Always reconcile: a local .netlify/ survives between builds, so a site that turns the
         // edge off (or loses Optima Express) must not keep deploying the last generated one.
         let sitemaps: string[] = [];
@@ -220,11 +224,19 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         } else {
           await removeEdge(root);
         }
-        if (optimaExpress) {
-          await writeRedirects(fileURLToPath(dir), optimaExpress, logger);
-          // robots.txt needs absolute sitemap URLs, so only with siteUrl.
-          await writeRobots(fileURLToPath(dir), siteUrl ? sitemaps.map((p) => `${siteUrl}${p}`) : []);
-        }
+        if (optimaExpress) await writeRedirects(distDir, optimaExpress, logger);
+
+        // ORBI-89: the site's own pages. Needs absolute URLs, so only with siteUrl — and so does
+        // every Sitemap: line in robots.txt.
+        const ownSitemap = siteUrl
+          ? await writeSitemap(distDir, pages, { siteUrl, postsSlug, lastmod: await fetchLastmod(wpUrl, WP_UA) }, logger)
+          : null;
+        // Optima Express shells stay out of search results WITHOUT a noindex: the same HTML is
+        // served for every real listing URL through the rewrites, so a noindex in it would
+        // deindex every listing. Disallow blocks only fetches OF /_ihf/ URLs.
+        const disallow = optimaExpress ? [`${SHELL_BASE}/`] : [];
+        const allSitemaps = siteUrl ? [...(ownSitemap ? [ownSitemap] : []), ...sitemaps.map((p) => `${siteUrl}${p}`)] : [];
+        if (disallow.length || allSitemaps.length) await writeRobots(distDir, { disallow, sitemaps: allSitemaps });
       },
     },
   };

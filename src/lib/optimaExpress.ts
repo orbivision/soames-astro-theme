@@ -206,34 +206,6 @@ export async function writeRedirects(
   }
 }
 
-/**
- * Keep the shells themselves out of search results WITHOUT a noindex. The same HTML is
- * served for every real listing URL through the rewrites, so a noindex in it would
- * deindex every listing. Disallow blocks only fetches OF /_ihf/ URLs.
- */
-export async function writeRobots(distDir: string, sitemaps: string[] = []): Promise<void> {
-  const file = path.join(distDir, 'robots.txt');
-  let existing = '';
-  try {
-    existing = await fs.readFile(file, 'utf8');
-  } catch {
-    /* no site robots.txt */
-  }
-  const lines = existing.split('\n').map((l) => l.trim());
-  const rule = `Disallow: ${SHELL_BASE}/`;
-  let out = existing;
-  const append = (text: string) => {
-    const sep = out && !out.endsWith('\n') ? '\n' : '';
-    out = `${out}${sep}${out ? '\n' : ''}${text}`;
-  };
-  // Its own group, so it can't be scoped into a site's bot-specific group by accident.
-  if (!lines.includes(rule)) append(`User-agent: *\n${rule}\n`);
-  // `Sitemap:` lines stand outside any group and must be absolute URLs (ORBI-82 Phase 4).
-  const missing = sitemaps.map((u) => `Sitemap: ${u}`).filter((l) => !lines.includes(l));
-  if (missing.length) append(`${missing.join('\n')}\n`);
-  if (out !== existing) await fs.writeFile(file, out);
-}
-
 function escape(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
