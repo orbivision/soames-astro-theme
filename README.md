@@ -47,6 +47,18 @@ build time, injects the page routes (front page, WP pages, blog archive,
 blog posts), authorizes WP image domains, and installs the **theme-shadow**
 resolver.
 
+### `siteUrl`
+
+Pass the site's public origin, e.g. `siteUrl: 'https://example.com'`, to turn on everything that
+needs absolute URLs: a self-referencing canonical and `og:url` on every page, the blog post share
+image (`og:image`), and `/sitemap.xml`. Without it the build writes none of these.
+
+The sitemap lists every page the build rendered — WordPress pages, blog posts, the blog index,
+the docs — with `<lastmod>` from WordPress's modified date. It leaves out `/preview/`, blog
+pagination, IDX shells, and any page that is a redirect, `noindex`, or canonicalised elsewhere.
+A `Sitemap:` line for it is merged into `robots.txt` (the site's own `public/robots.txt` is kept
+and only appended to).
+
 ## Component overrides (the shadowing successor)
 
 Astro has no built-in component shadowing. This theme provides it via a Vite
