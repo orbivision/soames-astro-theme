@@ -59,6 +59,33 @@ pagination, IDX shells, and any page that is a redirect, `noindex`, or canonical
 A `Sitemap:` line for it is merged into `robots.txt` (the site's own `public/robots.txt` is kept
 and only appended to).
 
+### `colorScheme`
+
+`colorScheme: 'dark'` renders the whole site dark. It sets `data-bs-theme="dark"` on `<html>`,
+which switches Bootstrap 5.3's components and the theme's own page colours together, and adds a
+`color-scheme` meta so scrollbars and form controls follow. The default, `'light'`, emits
+nothing, so a site that doesn't pass it is unaffected.
+
+The page colours are CSS custom properties defined at the top of `src/styles/soames/base.css`:
+`--soames-ink`, `--soames-surface`, `--soames-link`, `--soames-accent` and the rest, each with a
+light value and a dark one. A site can retune either scheme from its `site-overrides.css`, which
+loads last and so wins at equal specificity:
+
+```css
+:root[data-bs-theme="dark"] {
+  --soames-link: #ef9455; /* >= 4.5:1 on every dark surface */
+}
+```
+
+Check a new dark value against `--soames-surface`, `--soames-surface-alt` and
+`--soames-surface-sunken`, not just the page: a brand colour that passes on the page
+background can fail on the code-block grey.
+
+Button, hero, footer, gallery and carousel colours are not tokens: they mean "this colour on
+that background" and don't change with the scheme. Neither do colours WordPress content carries
+itself (an editor-set text colour, an image with a baked-in white background), so check a dark
+site's content as well as its CSS.
+
 ## Component overrides (the shadowing successor)
 
 Astro has no built-in component shadowing. This theme provides it via a Vite

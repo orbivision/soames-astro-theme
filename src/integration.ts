@@ -92,6 +92,13 @@ export interface SoamesThemeOptions {
    * (ORBI-82): a site that doesn't pass it keeps byte-identical output.
    */
   siteUrl?: string;
+  /**
+   * ORBI-84. `'dark'` renders the site dark: sets `data-bs-theme="dark"` on `<html>`, which flips
+   * Bootstrap 5.3's components and redefines the Soames page tokens (`--soames-ink`,
+   * `--soames-surface`, … in soames/base.css) in one move. Default `'light'` emits nothing, so a
+   * site that doesn't pass it keeps byte-identical output.
+   */
+  colorScheme?: 'light' | 'dark';
   /** Optima Express (ORBI-82). Only acts when the WordPress site has it registered in Kestrel mode. */
   optimaExpress?: {
     /**
@@ -127,6 +134,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
   })();
   const imageDomains = options.imageDomains ?? (imageHost ? [imageHost] : []);
   const siteUrl = (options.siteUrl ?? '').replace(/\/+$/, '');
+  const colorScheme = options.colorScheme === 'dark' ? 'dark' : 'light';
   let optimaExpress: OptimaExpressSettings | null = null;
   let postsSlug = 'blog';
   let root = process.cwd();
@@ -172,6 +180,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
               'import.meta.env.WORDPRESS_GRAPHQL_URL': JSON.stringify(wpUrl),
               'import.meta.env.WORDPRESS_BASE_URL': JSON.stringify(wpBase),
               'import.meta.env.SOAMES_SITE_URL': JSON.stringify(siteUrl),
+              'import.meta.env.SOAMES_COLOR_SCHEME': JSON.stringify(colorScheme),
             },
           },
         });

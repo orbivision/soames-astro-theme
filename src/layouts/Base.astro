@@ -101,12 +101,18 @@ const kestrelConfig =
     ? `window.ihfKestrel = window.ihfKestrel || {}; ihfKestrel.config = ${JSON.stringify(oe.kestrel).replace(/</g, "\\u003c")};`
     : null;
 const showCompanyName = soames.showCompanyName ?? true;
+
+// ORBI-84: opt-in dark scheme. Light emits no attribute at all (undefined attributes are dropped),
+// so light sites keep byte-identical output. The color-scheme meta makes the browser's own parts
+// (scrollbars, form controls, autofill) dark too.
+const darkScheme = import.meta.env.SOAMES_COLOR_SCHEME === "dark";
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme={darkScheme ? "dark" : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {darkScheme && <meta name="color-scheme" content="dark" />}
     <title>{fullTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}
     {robots && <meta name="robots" content={robots} />}

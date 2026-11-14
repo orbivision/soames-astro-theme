@@ -11,9 +11,59 @@
  * Prefixed --soames-* because vendor/wordpress-blocks.css already defines --color-text etc.
  * with DIFFERENT values; reusing those names would change every site. */
 :root {
-  --soames-ink: #232323;        /* body text, nav and dropdown text, docs UI */
-  --soames-ink-strong: #000000; /* text inside white content blocks (features, article, list, blog roll) */
-  --soames-surface: #ffffff;    /* white content blocks, cards, docs search, the content wrappers */
+  --soames-ink: #232323;            /* body text, nav and dropdown text, docs UI */
+  --soames-ink-strong: #000000;     /* text inside white content blocks (features, article, list, blog roll) */
+  --soames-ink-muted: #6c6c6c;      /* breadcrumbs */
+  --soames-ink-soft: #555;          /* prose blockquote */
+  --soames-surface: #ffffff;        /* white content blocks, cards, docs search, the content wrappers */
+  --soames-surface-alt: #efefef;    /* grey panels: docs/blog sidebar, blog roll, gallery menu, inline code */
+  --soames-surface-sunken: #f5f5f5; /* code blocks */
+  --soames-nav-bg: #f0efea;         /* the off-white navbar */
+  --soames-border: #e0ded8;         /* docs menu rule, search box, code block, prose rules */
+  --soames-link: #1f4d2a;           /* link text only — buttons and .bg-primary keep the literal */
+  --soames-accent: #bc361b;         /* docs menu: active and hovered article */
+  --soames-surface-band: #eee;      /* the Icon Header's grey band (.soames-section-subhead) */
+}
+
+/* Dark scheme: set by the theme's colorScheme: 'dark' option (Base.astro). Values follow
+ * Bootstrap 5.3's own dark palette (read from bootstrap.css, not remembered) so Soames and
+ * Bootstrap surfaces match; every ink/surface pair is >= 4.5:1 (WCAG AA). The surface equals the
+ * page background on purpose: in light mode the white blocks sit on a white page too, so they
+ * don't read as boxes there either.
+ *
+ * The --color-* lines are vendor/wordpress-blocks.css's variables (WordPress core blocks:
+ * headings, blockquotes, links). They are redefined here rather than in the vendor file, and the
+ * selector carries :root so it outranks the vendor :root block regardless of import order. */
+:root[data-bs-theme="dark"] {
+  --soames-ink: #dee2e6;            /* = --bs-body-color */
+  --soames-ink-strong: #ffffff;     /* = --bs-emphasis-color */
+  --soames-ink-muted: #adb5bd;      /* = gray-500 */
+  --soames-ink-soft: #ced4da;       /* = gray-400 */
+  --soames-surface: #212529;        /* = --bs-body-bg */
+  --soames-surface-alt: #2b3035;    /* = --bs-tertiary-bg */
+  --soames-surface-sunken: #343a40; /* = --bs-secondary-bg */
+  --soames-nav-bg: #2b3035;         /* = --bs-tertiary-bg */
+  --soames-border: #495057;         /* = --bs-border-color */
+  --soames-link: #75b798;           /* = success-text-emphasis: the forest green, lifted to read on dark */
+  --soames-accent: #e8846c;         /* the red-orange lifted to read on dark (5.0:1 on surface-alt) */
+  --soames-surface-band: #2b3035;   /* = --bs-tertiary-bg */
+
+  --color-text: var(--soames-ink);
+  --color-text-light: var(--soames-ink-muted);
+  --color-heading: var(--soames-ink-strong);
+  --color-heading-black: var(--soames-ink-strong);
+  --color-accent: var(--soames-border);
+  --color-primary: var(--soames-link);
+}
+
+/* Vendor captions hard-code #555 (not a variable), unreadable on a dark page. Dark-only, so
+ * light output is untouched. */
+:root[data-bs-theme="dark"] :is(
+  .wp-block-latest-posts__post-author, .wp-block-rss__item-author, .wp-block-audio figcaption,
+  .wp-block-embed figcaption, .blocks-gallery-caption, .wp-block-image figcaption,
+  .wp-block-table figcaption, .wp-block-video figcaption
+) {
+  color: var(--soames-ink-muted);
 }
 
 .navbar-dropdown {
@@ -419,7 +469,7 @@ a.soames-iconfont:hover {
 }
 
 .article {
-  background-color: white;
+  background-color: var(--soames-surface);
 }
 
 .article .lead p,
