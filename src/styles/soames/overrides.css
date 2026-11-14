@@ -875,7 +875,7 @@ section.lazy-placeholder:after {
 }
 
 .soames-gallery-menu .card-img {
-  background-color: #fff;
+  background-color: var(--soames-surface);
 }
 
 /* ORBI-44: keep every tile the same size regardless of the source image's
@@ -901,7 +901,7 @@ section.lazy-placeholder:after {
 }
 
 .soames-gallery-menu .card-box {
-  background-color: #ffffff;
+  background-color: var(--soames-surface);
   padding: 2rem;
 }
 
@@ -993,7 +993,7 @@ section.lazy-placeholder:after {
 .soames-features {
   padding-top: 35px;
   padding-bottom: 30px;
-  background-color: #ffffff;
+  background-color: var(--soames-surface);
 }
 
 .soames-features h2 {
@@ -1082,11 +1082,11 @@ section.lazy-placeholder:after {
 }
 
 .soames-features H2 {
-  color: #000000;
+  color: var(--soames-ink-strong);
 }
 
 .soames-features P {
-  color: #000000;
+  color: var(--soames-ink-strong);
 }
 
 .soames-blog-roll {
@@ -1124,13 +1124,13 @@ section.lazy-placeholder:after {
 }
 
 .soames-blog-roll .soames-text {
-  color: #000000;
+  color: var(--soames-ink-strong);
 }
 
 .soames-blog-roll .card-wrapper {
   height: 100%;
   padding-bottom: 2rem;
-  background: #ffffff;
+  background: var(--soames-surface);
   box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0);
   transition: box-shadow 0.3s;
 }
@@ -1173,7 +1173,7 @@ section.lazy-placeholder:after {
 .soames-docs-menu-item > a {
   display: block;
   padding: 0.4rem 0 0.4rem 0.85rem;
-  color: #232323;
+  color: var(--soames-ink);
   text-decoration: none;
   border-left: 2px solid #e0ded8;
   transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
@@ -1213,8 +1213,8 @@ section.lazy-placeholder:after {
   width: 100%;
   padding: 0.55rem 0.85rem;
   font-size: 0.95rem;
-  color: #232323;
-  background: #fff;
+  color: var(--soames-ink);
+  background: var(--soames-surface);
   border: 1px solid #e0ded8;
   border-radius: 4px;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
@@ -1233,7 +1233,7 @@ section.lazy-placeholder:after {
   margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
-  background: #fff;
+  background: var(--soames-surface);
   border: 1px solid #e0ded8;
   border-radius: 4px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
@@ -1257,7 +1257,7 @@ section.lazy-placeholder:after {
 
 .soames-docs-search-title {
   display: block;
-  color: #232323;
+  color: var(--soames-ink);
   font-weight: 500;
 }
 .soames-docs-search-result.is-active .soames-docs-search-title {
@@ -1328,7 +1328,7 @@ section.lazy-placeholder:after {
 
 /* Current page: no link, reads a touch stronger than the ancestors. */
 .soames-breadcrumb-item [aria-current="page"] {
-  color: #232323;
+  color: var(--soames-ink);
 }
 
 .soames-menu .navbar {
@@ -1806,7 +1806,7 @@ section.lazy-placeholder:after {
 .soames-title {
   padding-top: 20px;
   padding-bottom: 0px;
-  background-color: #ffffff;
+  background-color: var(--soames-surface);
 }
 
 .soames-title H2 {
@@ -1825,7 +1825,7 @@ section.lazy-placeholder:after {
 .soames-article {
   padding-top: 0px;
   padding-bottom: 30px;
-  background-color: #ffffff;
+  background-color: var(--soames-surface);
 }
 
 .soames-article .line {
@@ -1839,7 +1839,7 @@ section.lazy-placeholder:after {
 .soames-article .section-text {
   padding: 2rem 0;
   text-align: left;
-  color: #000000;
+  color: var(--soames-ink-strong);
 }
 
 .soames-article .inner-container {
@@ -1915,7 +1915,7 @@ section.lazy-placeholder:after {
 .soames-list {
   padding-top: 0px;
   padding-bottom: 45px;
-  background-color: #ffffff;
+  background-color: var(--soames-surface);
 }
 
 .soames-list .counter-container {
@@ -1931,7 +1931,7 @@ section.lazy-placeholder:after {
 }
 
 .soames-list .soames-text UL {
-  color: #000000;
+  color: var(--soames-ink-strong);
 }
 
 /* ORBI-42: the refactored Soames Text List carries its own symmetric top/bottom
@@ -2031,12 +2031,12 @@ section.lazy-placeholder:after {
 
 .soames-gatsby-content {
   padding: 60px 100px 40px 100px;
-  background-color: #fff;
+  background-color: var(--soames-surface);
 }
 
 .soames-gatsby-blog-content {
   padding: 60px 40px 40px 40px;
-  background-color: #fff;
+  background-color: var(--soames-surface);
 }
 
 .soames-gatsby-sidebar {
@@ -2108,7 +2108,7 @@ section.lazy-placeholder:after {
 /* Code: light block for fenced code, subtle chip for inline code. */
 .soames-prose pre {
   background: #f5f5f5;
-  color: #232323;
+  color: var(--soames-ink);
   padding: 1rem 1.25rem;
   border: 1px solid #e0ded8;
   border-radius: 6px;
@@ -2208,20 +2208,20 @@ section.lazy-placeholder:after {
 
 .navbar-dropdown .navbar-caption,
 .navbar-dropdown .navbar-caption:hover {
-  color: #232323 !important;
+  color: var(--soames-ink) !important;
 }
 
 .soames-menu .nav-link,
 .soames-menu .nav-link:hover,
 .soames-menu .dropdown-item {
-  color: #232323 !important;
+  color: var(--soames-ink) !important;
 }
 
 /* Hamburger icon: dark on off-white navbar */
 .navbar-dropdown .hamburger-icon {
-  -webkit-box-shadow: 0 -6px 0 1px #232323, 0 0 0 1px #232323, 0 6px 0 1px #232323;
-  -moz-box-shadow: 0 -6px 0 1px #232323, 0 0 0 1px #232323, 0 6px 0 1px #232323;
-  box-shadow: 0 -6px 0 1px #232323, 0 0 0 1px #232323, 0 6px 0 1px #232323;
+  -webkit-box-shadow: 0 -6px 0 1px var(--soames-ink), 0 0 0 1px var(--soames-ink), 0 6px 0 1px var(--soames-ink);
+  -moz-box-shadow: 0 -6px 0 1px var(--soames-ink), 0 0 0 1px var(--soames-ink), 0 6px 0 1px var(--soames-ink);
+  box-shadow: 0 -6px 0 1px var(--soames-ink), 0 0 0 1px var(--soames-ink), 0 6px 0 1px var(--soames-ink);
 }
 
 /* Mobile slide-out menu: forest green */
@@ -2355,7 +2355,7 @@ blockquote {
    .hamburger span lines were still #fff (invisible). Match the dark nav text.
    The scheme's dark-hamburger rule targets .hamburger-icon, not our .hamburger span. */
 .soames-menu button.navbar-toggler .hamburger span {
-  background-color: #232323;
+  background-color: var(--soames-ink);
 }
 /* (2) Vertical position: use a FIXED top that centers the toggler in the closed
    77px bar. (A % / translateY approach re-centers against the *expanded* navbar

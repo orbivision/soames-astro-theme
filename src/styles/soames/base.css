@@ -1,3 +1,21 @@
+/* Page colour tokens (ORBI-84).
+ *
+ * These name what a colour MEANS on the page — the page's text ("ink") and the white panels
+ * content sits on ("surface") — so a colour scheme can redefine them in one place. Each default
+ * is the literal it replaced, so on their own they change nothing.
+ *
+ * Deliberately NOT tokens: button, utility-class (.text-white, .soames-bg-black), hero, footer,
+ * gallery and carousel colours. Those mean "this colour on that background" and must not flip
+ * with the page — white text on a red button stays white in any scheme.
+ *
+ * Prefixed --soames-* because vendor/wordpress-blocks.css already defines --color-text etc.
+ * with DIFFERENT values; reusing those names would change every site. */
+:root {
+  --soames-ink: #232323;        /* body text, nav and dropdown text, docs UI */
+  --soames-ink-strong: #000000; /* text inside white content blocks (features, article, list, blog roll) */
+  --soames-surface: #ffffff;    /* white content blocks, cards, docs search, the content wrappers */
+}
+
 .navbar-dropdown {
   left: 0;
   padding: 0;
@@ -384,7 +402,7 @@ body {
 body {
   font-style: normal;
   line-height: 1.5;
-  color: #232323;
+  color: var(--soames-ink);
   position: relative;
   margin: 0;
 }
