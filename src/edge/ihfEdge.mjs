@@ -5,7 +5,8 @@
 //
 // Per request, in order:
 //   1. group: listing URLs split A/B by listing number when the experiment is on; A passes through;
-//   2. displayability check (optional, site-configured URL template): 404 → a real 404;
+//   2. displayability check (optional, site-configured URL template): 404 → a real 404, but
+//      only once the token itself is known good (tokenCheck), since a bad token 404s everything;
 //   3. head oracle: the durably cached head function (WordPress, fetched with the edge secret);
 //      WordPress 404 → a real 404;
 //   4. wrong address slug → 301 to the canonical one;
@@ -17,6 +18,7 @@ import {
   matchRoute,
   groupFor,
   fillTemplate,
+  templatesComplete,
   readShellConfig,
   spliceHead,
   stripSiteName,
@@ -27,13 +29,16 @@ import {
 /* global CONFIG */
 const ROUTES = compileRoutes(CONFIG.routes);
 
-async function checkDisplayable(params) {
+// Status of a GET to a templated URL with the displayability headers: 200, 404 or 'unknown'.
+// 'skipped' when a placeholder has no value — never ask with an empty token.
+async function statusOf(urlTemplate, values) {
   const c = CONFIG.displayability;
-  const values = { ...params, activationToken: CONFIG.activationToken };
+  const templates = [urlTemplate, ...Object.values(c.headers || {})];
+  if (!templatesComplete(templates, values)) return 'skipped';
   const headers = {};
   for (const [k, v] of Object.entries(c.headers || {})) headers[k] = fillTemplate(v, values);
   try {
-    const r = await fetch(fillTemplate(c.url, values), {
+    const r = await fetch(fillTemplate(urlTemplate, values), {
       headers,
       redirect: 'manual',
       signal: AbortSignal.timeout(CONFIG.checkTimeoutMs),
@@ -44,6 +49,27 @@ async function checkDisplayable(params) {
   } catch {
     return 'unknown';
   }
+}
+
+// Per-instance cache of the token verdict. Only definite answers are cached; a timeout is
+// asked again next time.
+let tokenVerdict = null; // { ok: boolean, at: number }
+
+async function tokenIsGood() {
+  const check = CONFIG.displayability.tokenCheck;
+  if (!check) return true; // not configured: trust a listing 404, as before
+  if (tokenVerdict && Date.now() - tokenVerdict.at < CONFIG.tokenCacheMs) return tokenVerdict.ok;
+  const s = await statusOf(check.url, { authenticationToken: CONFIG.authenticationToken });
+  if (s === 200 || s === 404) tokenVerdict = { ok: s === 200, at: Date.now() };
+  return s === 200;
+}
+
+async function checkDisplayable(params) {
+  const s = await statusOf(CONFIG.displayability.url, { ...params, authenticationToken: CONFIG.authenticationToken });
+  if (s === 'skipped') return 'unchecked';
+  // A listing 404 is believed only if the token is good; otherwise it's the token talking.
+  if (s === 404 && !(await tokenIsGood())) return 'token-unverified';
+  return s;
 }
 
 async function fetchHead(url) {
@@ -101,7 +127,9 @@ export default async function handler(request, context) {
     const html = spliceHead(shell, { fullTitle: siteTitle ? `${label} | ${siteTitle}` : label, title: label, robots: 'noindex' });
     return respond(html ?? shell, 404, display === 404 ? 'B-404-check' : 'B-404-wp');
   }
-  if (!head || head.status !== 200) return respond(shell, shellRes.status, 'B-open', head && head.error);
+  if (!head || head.status !== 200) {
+    return respond(shell, shellRes.status, 'B-open', (head && head.error) || (display === 'token-unverified' ? display : undefined));
+  }
 
   const name = stripSiteName(head.title || '', siteTitle);
   let path = url.pathname;
@@ -124,5 +152,5 @@ export default async function handler(request, context) {
     canonical: new URL(path, origin).href,
   });
   if (!html) return respond(shell, shellRes.status, 'B-open', 'no head marker');
-  return respond(html, 200, 'B', display === 200 ? 'displayable' : undefined);
+  return respond(html, 200, 'B', display === 200 ? 'displayable' : display === 'token-unverified' ? display : undefined);
 }

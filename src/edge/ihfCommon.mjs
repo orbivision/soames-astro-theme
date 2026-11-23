@@ -161,6 +161,13 @@ export function fillTemplate(template, values) {
   return String(template).replace(/\{([A-Za-z][A-Za-z0-9_]*)\}/g, (_, k) => encodeURIComponent(values[k] ?? ''));
 }
 
+/** Every placeholder in these templates has a non-empty value (an empty one means: don't ask). */
+export function templatesComplete(templates, values) {
+  return templates.every((t) =>
+    [...String(t).matchAll(/\{([A-Za-z][A-Za-z0-9_]*)\}/g)].every(([, k]) => values[k] != null && values[k] !== ''),
+  );
+}
+
 /**
  * Experiment group (ORBI-82 D4). Listing URLs split by listing-number parity — even → B (edge
  * head), odd → A (client head writer only) — so the split is stable per listing and

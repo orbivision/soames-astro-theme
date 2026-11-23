@@ -19,7 +19,7 @@ import {
   getMenuByLocation,
 } from "../lib/wp";
 import { htmlToText, truncateAtWord } from "../lib/text";
-import { isKestrel } from "../lib/optimaExpress";
+import { isKestrel, publicKestrelConfig } from "../lib/optimaExpress";
 
 interface Props {
   pageTitle: string;
@@ -93,12 +93,13 @@ const canonicalUrl = siteUrl && canonical !== false ? new URL(Astro.url.pathname
 const shareImage = siteUrl && image?.startsWith("/") && !image.startsWith("//") ? new URL(image, siteUrl).href : null;
 
 // Loaded synchronously in <head>: widgets call ihfKestrel.render() inline while the page
-// parses. It's ~770 KB, so only on pages that use it (decision B). The activationToken is
-// public by design — WordPress prints it in every page Optima Express renders.
+// parses. It's ~770 KB, so only on pages that use it (decision B). Only the public
+// authentication token goes into the page, never the registration key (ORBI-91; see
+// publicKestrelConfig for the one transitional exception).
 const oe = soames.optimaExpress;
 const kestrelConfig =
   kestrel && isKestrel(oe)
-    ? `window.ihfKestrel = window.ihfKestrel || {}; ihfKestrel.config = ${JSON.stringify(oe.kestrel).replace(/</g, "\\u003c")};`
+    ? `window.ihfKestrel = window.ihfKestrel || {}; ihfKestrel.config = ${JSON.stringify(publicKestrelConfig(oe).config).replace(/</g, "\\u003c")};`
     : null;
 const showCompanyName = soames.showCompanyName ?? true;
 

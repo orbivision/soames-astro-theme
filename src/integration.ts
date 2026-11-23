@@ -6,7 +6,7 @@ import path from 'node:path';
 import { themeShadow } from './theme-shadow.js';
 import { configureLocalizer } from './lib/localizeImages.js';
 import { downloadImages } from './lib/localizeDownload.js';
-import { isKestrel, writeRedirects, SHELL_BASE, type OptimaExpressSettings } from './lib/optimaExpress.js';
+import { isKestrel, publicKestrelConfig, writeRedirects, SHELL_BASE, type OptimaExpressSettings } from './lib/optimaExpress.js';
 import { writeRobots } from './lib/robots.js';
 import { writeSitemap, fetchLastmod } from './lib/sitemap.js';
 import { writeEdge, removeEdge, type OptimaExpressEdgeOptions } from './lib/ihfEdge.js';
@@ -234,6 +234,13 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
           await removeEdge(root);
         }
         if (optimaExpress) await writeRedirects(distDir, optimaExpress, logger);
+        // ORBI-91: an older plugin sends only the registration key, which then sits in every IDX
+        // page. Optima Express 9.0.2+ refuses a key once it has been public. Say so on every build.
+        if (optimaExpress && publicKestrelConfig(optimaExpress).legacyKey) {
+          logger.warn(
+            'Optima Express: WordPress sent the registration key and no public authentication token, so the key is being published in every IDX page. Upgrade the Soames plugin to 2.0.0+ and rebuild.',
+          );
+        }
 
         // ORBI-89: the site's own pages. Needs absolute URLs, so only with siteUrl — and so does
         // every Sitemap: line in robots.txt.

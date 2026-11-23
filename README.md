@@ -133,8 +133,13 @@ That needs Soames plugin **1.6.0+**.
 `edge` also takes an object:
 - `split: true` serves odd-numbered listings with the browser-side head only, for comparing the
   two approaches;
-- `displayability: { url, headers }` is an optional status check per listing, where a 404 makes
-  the page a real 404. `{listingNumber}`, `{boardId}` and `{activationToken}` are filled in;
+- `displayability: { url, headers, tokenCheck }` is an optional status check per listing, where a
+  404 makes the page a real 404. `{listingNumber}`, `{boardId}` and `{authenticationToken}` (Optima
+  Express's public token; needs Soames plugin **2.0.0+**) are filled in. If a placeholder has no
+  value, the check is skipped. `tokenCheck: { url }` is a URL that answers 200 only while the token
+  is valid. With it set, a listing 404 is trusted only after the token has checked out, so a revoked
+  token can't turn every listing into a 404. The registration key is never used: Optima Express
+  9.0.2+ treats it as a secret;
 - `headTimeoutMs` sets how long the edge waits for WordPress (default 8000).
 
 Without `edge`, a small script in each shell fills in the title, description and canonical in
