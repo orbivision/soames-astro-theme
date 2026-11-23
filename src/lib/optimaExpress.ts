@@ -24,7 +24,7 @@ export interface OptimaExpressSettings {
   /** Soames supports "kestrel" only; anything else builds no shells. */
   mode: 'kestrel' | 'kestrel-detail' | 'legacy' | 'unknown';
   /**
-   * What goes into `ihfKestrel.config`. Plugin 1.8.0+ sends the PUBLIC `authenticationToken`
+   * What goes into `ihfKestrel.config`. Plugin 2.0.0+ sends the PUBLIC `authenticationToken`
    * that registration returns. Earlier plugins sent `activationToken`, the site's registration
    * key, which Optima Express 9.0.2+ treats as a secret and refuses once it has been seen in
    * public (ORBI-91). Use publicKestrelConfig() rather than reading this directly.
@@ -38,7 +38,7 @@ export interface OptimaExpressSettings {
 
 /**
  * The Kestrel config a page may publish: the public authentication token and the platform,
- * never the registration key. A plugin older than 1.8.0 sends only the key; until it's
+ * never the registration key. A plugin older than 2.0.0 sends only the key; until it's
  * upgraded, that key is used as before (so the site keeps working whichever deploys first) and
  * `legacyKey` is set so the build can say so loudly.
  */

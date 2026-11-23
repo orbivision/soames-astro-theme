@@ -238,7 +238,7 @@ export default function soamesTheme(options: SoamesThemeOptions = {}): AstroInte
         // page. Optima Express 9.0.2+ refuses a key once it has been public. Say so on every build.
         if (optimaExpress && publicKestrelConfig(optimaExpress).legacyKey) {
           logger.warn(
-            'Optima Express: WordPress sent the registration key and no public authentication token, so the key is being published in every IDX page. Upgrade the Soames plugin to 1.8.0+ and rebuild.',
+            'Optima Express: WordPress sent the registration key and no public authentication token, so the key is being published in every IDX page. Upgrade the Soames plugin to 2.0.0+ and rebuild.',
           );
         }
 
