@@ -51,16 +51,19 @@ async function statusOf(urlTemplate, values) {
   }
 }
 
-// Per-instance cache of the token verdict. Only definite answers are cached; a timeout is
-// asked again next time.
-let tokenVerdict = null; // { ok: boolean, at: number }
+// Only a BAD verdict is cached (per instance), so a dead token costs one check per few
+// minutes rather than one per listing. A GOOD verdict is never reused: a token dies at a
+// known moment (re-registration replaces it), and a cached "good" would keep trusting listing
+// 404s, serving live listings as real 404s, until it expired. 0.1.39 did exactly that on
+// darst.app. Listing 404s are rare, so asking each time is cheap.
+let badTokenSince = 0;
 
 async function tokenIsGood() {
   const check = CONFIG.displayability.tokenCheck;
   if (!check) return true; // not configured: trust a listing 404, as before
-  if (tokenVerdict && Date.now() - tokenVerdict.at < CONFIG.tokenCacheMs) return tokenVerdict.ok;
+  if (badTokenSince && Date.now() - badTokenSince < CONFIG.tokenCacheMs) return false;
   const s = await statusOf(check.url, { authenticationToken: CONFIG.authenticationToken });
-  if (s === 200 || s === 404) tokenVerdict = { ok: s === 200, at: Date.now() };
+  badTokenSince = s === 404 ? Date.now() : 0;
   return s === 200;
 }
 

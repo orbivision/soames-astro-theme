@@ -30,7 +30,8 @@ export interface OptimaExpressEdgeOptions {
    * `tokenCheck` (recommended): a URL that answers 200 only while the token is valid, sent with
    * the same headers. A listing 404 is then trusted only after it has answered 200, because a
    * revoked or wrong token makes every listing 404 too — without it, a bad token turns every
-   * listing into a real 404. The verdict is cached per edge instance for a few minutes.
+   * listing into a real 404. Asked on every listing 404; only a bad verdict is cached (per edge
+   * instance, a few minutes).
    */
   displayability?: { url: string; headers?: Record<string, string>; tokenCheck?: { url: string } };
   /** How long the edge waits for the head function before serving the plain shell. Default 8000. */
