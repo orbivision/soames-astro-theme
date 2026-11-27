@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import parse, { domToReact, DOMNode, HTMLReactParserOptions, Element as DomElement } from "html-react-parser";
+import { domToReact, htmlToDOM, DOMNode, HTMLReactParserOptions, Element as DomElement } from "html-react-parser";
 
 import { getAttributes } from "./getAttributes";
 import { getContent } from "./getContent";
@@ -44,6 +44,29 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
 
     // --- Gutenberg built-in block mappings ---
 
+    // A run of consecutive paragraphs, grouped by groupParagraphRuns() before parsing. One
+    // section for the whole run, so paragraphs sit a paragraph apart rather than a section
+    // apart (ORBI-93). Must be claimed here: it is a top-level node, so the generic core-block
+    // fallback at the bottom would otherwise wrap it.
+    if ((node as DomElement).name === "div" && classes.includes(PARAGRAPH_RUN_CLASS)) {
+      const paragraphs = children.filter((c): c is DomElement => c.type === "tag");
+      return (
+        <section className={`soames-section article soames-article ${PARAGRAPH_RUN_CLASS}`}>
+          <div className="container col-md-10">
+            <div className="inner-container" style={{ width: "100%" }}>
+              <div className="section-text align-center mbr-fonts-style display-7 pb-2">
+                {paragraphs.map((p, i) => (
+                  <p key={i} className="block-text mbr-fonts-style display-7">
+                    {domToReact(p.children as DOMNode[], opts)}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
     if (classes.includes("wp-block-heading")) {
       if (proseMode) return undefined; // keep the plain <h2>/<h3>, left-aligned
       return <SoamesTitle title={domToReact(children, opts)} />;
@@ -52,9 +75,7 @@ const handleShortcodes: HTMLReactParserOptions["replace"] = (node) => {
     // Gutenberg paragraph blocks render as plain <p> tags (no wp-block-paragraph class in server HTML).
     // Skip paragraphs whose first child text starts with "[" — those are classic editor shortcodes.
     if ((node as DomElement).name === "p") {
-      const firstChild = children[0] as any;
-      const isShortcode = firstChild?.type === "text" && firstChild?.data?.trim().startsWith("[");
-      if (!isShortcode) {
+      if (!isShortcodeParagraph(node as DomElement)) {
         if (proseMode) return undefined; // keep the plain <p>, left-aligned
         return (
           <section className="soames-section article soames-article">
@@ -393,9 +414,83 @@ function shouldWrapCoreBlock(node: DOMNode): boolean {
   return true;
 }
 
+const PARAGRAPH_RUN_CLASS = "soames-paragraph-run";
+
+// A classic-editor shortcode arrives as a <p> whose text starts with "[" — not a paragraph.
+function isShortcodeParagraph(el: DomElement): boolean {
+  const first = el.children?.[0] as any;
+  return first?.type === "text" && !!first.data?.trim().startsWith("[");
+}
+
+const isPlainParagraph = (n: DOMNode): n is DomElement =>
+  n.type === "tag" && (n as DomElement).name === "p" && !isShortcodeParagraph(n as DomElement);
+
+// Whitespace between blocks (WP puts "\n\n" between every one) must not end a run, or the
+// grouping would never match real content. Comments are skipped for the same reason.
+const isSeparator = (n: DOMNode): boolean =>
+  n.type === "comment" || (n.type === "text" && !(n as any).data.trim());
+
+/**
+ * Groups each run of two or more consecutive sibling paragraphs into one synthetic
+ * `div.soames-paragraph-run`, which handleShortcodes renders as a single section (ORBI-93).
+ *
+ * Without this every paragraph became its own section, and two in a row sat ~102px apart:
+ * the paragraph's 32px margin + 8px `.pb-2` + the section's 30px bottom padding + the next
+ * section's 32px top padding. A lone paragraph is left exactly as it was, so pages without
+ * consecutive paragraphs render byte-identical. Anything else — a heading, image, list,
+ * Soames block or shortcode paragraph — ends a run.
+ *
+ * Applied at EVERY depth, not just the top level: the paragraph handler fires on any <p>,
+ * including those a content-inlining block (Soames Feature) hands back through domToReact,
+ * so a run inside a Feature stacked the same 102px.
+ */
+function groupParagraphRuns(nodes: DOMNode[], parent: DomElement | null = null): DOMNode[] {
+  for (const n of nodes) {
+    if (n.type === "tag" && (n as DomElement).name !== "p") {
+      const el = n as DomElement;
+      el.children = groupParagraphRuns(el.children as DOMNode[], el) as typeof el.children;
+    }
+  }
+  const out: DOMNode[] = [];
+  let i = 0;
+  while (i < nodes.length) {
+    if (!isPlainParagraph(nodes[i])) {
+      out.push(nodes[i++]);
+      continue;
+    }
+    // Collect paragraphs, looking past separators, until something else appears.
+    const run: DomElement[] = [nodes[i] as DomElement];
+    let j = i + 1;
+    let end = i + 1; // index after the last paragraph taken
+    while (j < nodes.length) {
+      if (isSeparator(nodes[j])) { j++; continue; }
+      if (!isPlainParagraph(nodes[j])) break;
+      run.push(nodes[j] as DomElement);
+      end = ++j;
+    }
+    if (run.length < 2) {
+      out.push(nodes[i++]);
+      continue;
+    }
+    const wrapper = new DomElement("div", { class: PARAGRAPH_RUN_CLASS }, run);
+    wrapper.parent = parent; // same level as the paragraphs it replaces (null = top level)
+    run.forEach((p, k) => {
+      p.parent = wrapper;
+      p.prev = run[k - 1] ?? null;
+      p.next = run[k + 1] ?? null;
+    });
+    out.push(wrapper);
+    i = end; // separators after the last paragraph are kept as they were
+  }
+  return out;
+}
+
 const Shortcodes: React.FC<ShortcodesProps> = ({ html, prose = false }) => {
   proseMode = !!prose;
-  const reactElements = parse(html || "", {
+  // parse() is htmlToDOM + domToReact; it's split here so marketing mode can regroup
+  // paragraph runs in between. Same parser options as parse()'s default.
+  const dom = html ? htmlToDOM(html, { lowerCaseAttributeNames: false }) : [];
+  const reactElements = domToReact(proseMode ? dom : groupParagraphRuns(dom), {
     replace: handleShortcodes,
   });
   proseMode = false;
