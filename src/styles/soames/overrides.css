@@ -1846,6 +1846,12 @@ section.lazy-placeholder:after {
   margin: 0 auto;
 }
 
+/* Consecutive paragraphs share one section (ORBI-93), a paragraph apart. The LAST keeps the
+   global `p` margin, so the space after a run is exactly the space after a lone paragraph. */
+.soames-paragraph-run .block-text:not(:last-child) {
+  margin-bottom: 1em;
+}
+
 @media (max-width: 768px) {
   .soames-article .inner-container {
     width: 100% !important;
